@@ -78,6 +78,7 @@ app.MapPost("/login", (LoginDTO dadosLogin) =>
 
 // 3. Classe DTO e Inicialização (SEMPRE NO FINAL)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+app.MapGet("/", () => "API BSFM - O motor está rodando perfeitamente!");
 app.Run($"http://0.0.0.0:{port}");
 
 public record LoginDTO(string Email, string Senha);
