@@ -78,5 +78,6 @@ app.MapPost("/login", (LoginDTO dadosLogin) =>
         }
     }
 });
+app.Run();
 
 public record LoginDTO(string Email, string Senha);
