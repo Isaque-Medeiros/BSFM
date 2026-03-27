@@ -86,6 +86,9 @@ app.MapGet("/debug-usuarios", () =>
         return Results.Ok(db.Usuarios.ToList());
     }
 });
+
+app.MapGet("/", () => Results.Content(File.ReadAllText("index.html"), "text/html"));
+
 app.Run();
 
 public record LoginDTO(string Email, string Senha);
