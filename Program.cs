@@ -1,14 +1,21 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseKestrel(options => {
-    options.ListenAnyIP(int.Parse(port));
+// PEGA A PORTA DO RAILWAY OU USA 8080 POR PADRÃO
+var portVar = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+int port = int.Parse(portVar);
+
+// FORÇA O KESTREL A OUVIR EM QUALQUER IP (0.0.0.0) E NA PORTA CORRETA
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(port);
 });
 
 builder.Services.AddCors(options => {
