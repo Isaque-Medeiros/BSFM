@@ -82,8 +82,8 @@
     <h2>BSFM Nutri</h2>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('cadastro')">Cadastro</button>
-        <button class="tab-btn" onclick="switchTab('login')">Login</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'cadastro')">Cadastro</button>
+        <button class="tab-btn" onclick="switchTab(event, 'login')">Login</button>
     </div>
 
     <!-- SEÇÃO DE CADASTRO -->
@@ -160,7 +160,7 @@
     function switchTab(event, tabId) { // Adicione o parâmetro event
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
+        document.getElementById(tabId).classList.add('active'); 
         event.currentTarget.classList.add('active');
         document.getElementById('resultado').style.display = 'none';
     }
