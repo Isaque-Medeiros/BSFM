@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// AJUSTE 1: Prioridade total para a porta que o Railway mandar
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080"; 
+// Railway costuma usar a 8080 ou 5000, deixamos flexível
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddCors(options => {
@@ -19,55 +18,46 @@ builder.Services.AddCors(options => {
 var app = builder.Build();
 app.UseCors("PermitirSite");
 
-// --- ROTA DE CADASTRO (Mantida igual) ---
-app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => 
-{
-    using (var db = new BSFMContext())
-    {
-        db.Database.EnsureCreated();
-        string senhaPura = usuarioVindoDoJs.SenhaHash;
-        usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(senhaPura);
-        CalcularNutricional calc = new CalcularNutricional();
-        calc.RegistrarCalculos(usuarioVindoDoJs);
-        db.Usuarios.Add(usuarioVindoDoJs);
-        db.SaveChanges();
-        return Results.Ok(new { mensagem = "Usuário cadastrado com sucesso!", id = usuarioVindoDoJs.ID });
-    }
-});
+// TENTA CRIAR O BANCO LOGO DE CARA (Com aviso de erro no log)
+try {
+    using var scope = app.Services.CreateScope();
+    using var db = new BSFMContext();
+    db.Database.EnsureCreated();
+    Console.WriteLine("[LOG] Banco de dados verificado/criado com sucesso.");
+} catch (Exception ex) {
+    Console.WriteLine($"[ERRO FATAL NO BANCO]: {ex.Message}");
+}
 
-// --- ROTA DE LOGIN (Mantida igual) ---
-app.MapPost("/login", (LoginDTO dadosLogin) => 
-{
-    using (var db = new BSFMContext())
-    {
-        string emailProcurado = dadosLogin.Email.Trim().ToLower();
-        var usuarioNoBanco = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == emailProcurado);
-        if (usuarioNoBanco == null) return Results.Json(new { mensagem = "E-mail não encontrado." }, statusCode: 400);
-        
-        bool senhaCorreta = BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, usuarioNoBanco.SenhaHash);
-        if (senhaCorreta) return Results.Ok(new { mensagem = "Login realizado!", nome = usuarioNoBanco.Nome, imc = usuarioNoBanco.IMC });
-        return Results.Json(new { mensagem = "Senha incorreta." }, statusCode: 400);
-    }
-});
-
-app.MapGet("/debug-usuarios", () => 
-{
-    using (var db = new BSFMContext())
-    {
-        return Results.Ok(db.Usuarios.ToList());
-    }
-});
-
-// --- AJUSTE 2: ROTA RAIZ SEGURA (O Health Check do Railway) ---
+// ROTA RAIZ (Onde o site carrega)
 app.MapGet("/", () => 
 {
-    // Tentamos ler o arquivo. Se falhar, mandamos um texto em vez de travar o servidor
     try {
         string path = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
-        return Results.Content(File.ReadAllText(path), "text/html");
-    } catch {
-        return Results.Content("<h1>API BSFM Online</h1><p>Mas o arquivo index.html nao foi encontrado no servidor.</p>", "text/html");
+        if (File.Exists(path)) {
+            return Results.Content(File.ReadAllText(path), "text/html");
+        } else {
+            return Results.Content("<h1>Aviso</h1><p>index.html nao encontrado na pasta root.</p>", "text/html");
+        }
+    } catch (Exception ex) {
+        return Results.Content($"<h1>Erro no Servidor</h1><p>{ex.Message}</p>", "text/html");
     }
+});
+
+app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
+    using var db = new BSFMContext();
+    usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
+    new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
+    db.Usuarios.Add(usuarioVindoDoJs);
+    db.SaveChanges();
+    return Results.Ok(new { mensagem = "Sucesso!", id = usuarioVindoDoJs.ID });
+});
+
+app.MapPost("/login", (LoginDTO dadosLogin) => {
+    using var db = new BSFMContext();
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
+    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
+        return Results.Ok(new { nome = user.Nome, imc = user.IMC });
+    return Results.Json(new { mensagem = "Erro no login" }, statusCode: 400);
 });
 
 app.Run();
