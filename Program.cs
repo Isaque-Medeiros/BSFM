@@ -6,9 +6,10 @@ using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Railway costuma usar a 8080 ou 5000, deixamos flexível
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.UseKestrel(options => {
+    options.ListenAnyIP(int.Parse(port));
+});
 
 builder.Services.AddCors(options => {
     options.AddPolicy("PermitirSite", policy => 
