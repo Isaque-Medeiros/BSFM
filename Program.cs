@@ -5,69 +5,52 @@ using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
 using System.Net;
-using System;
-using System.IO;
 
-// 1. SEMPRE A PRIMEIRA LINHA (Configuração de datas para o Postgres)
+// 1. DATABASE COMPATIBILITY
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 2. CONFIGURAÇÃO DA PORTA E DO SERVIDOR KESTREL
-var portVar = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-int port = int.Parse(portVar);
+// 2. PORTA (REMOVI O CONFIGUREKESTREL MANUAL)
+// Deixamos o .NET gerenciar a porta automaticamente via variáveis do Railway
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.Listen(IPAddress.Any, port);
-});
-
-// 3. ADICIONAR SERVIÇOS (CORS E BANCO DE DADOS)
 builder.Services.AddCors(options => {
     options.AddPolicy("PermitirSite", policy => 
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
-
-// AVISO AO C# COMO CONECTAR AO BANCO (Crucial para funcionar o GetRequiredService abaixo)
 builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
-
-// 4. CONFIGURAÇÃO DE MIDDLEWARE
 app.UseCors("PermitirSite");
 
-// 5. TENTA CRIAR AS TABELAS NO POSTGRES ASSIM QUE LIGA
+// 3. DATABASE INIT (Simplificado)
 try {
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-        db.Database.EnsureCreated();
-        Console.WriteLine("[LOG] Conexao com banco verificada e tabelas prontas.");
-    }
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+    db.Database.EnsureCreated();
+    Console.WriteLine("[LOG] Banco de dados pronto.");
 } catch (Exception ex) {
-    Console.WriteLine($"[ERRO FATAL NO BANCO]: {ex.Message}");
-    // Não paramos o app aqui para o Railway não entrar em loop, mas o erro aparecerá no log
+    Console.WriteLine($"[AVISO BANCO]: {ex.Message}");
 }
 
-// 6. ROTA RAIZ (Onde o seu site carrega no navegador)
-app.MapGet("/", () => 
+// 4. ROTA RAIZ (Com Log de Monitoramento)
+app.MapGet("/", (HttpContext context) => 
 {
-    string[] locaisPossiveis = {
+    Console.WriteLine($"[LOG] Recebi uma visita de: {context.Connection.RemoteIpAddress}");
+    
+    string[] locais = {
         Path.Combine(AppContext.BaseDirectory, "index.html"),
         Path.Combine(Directory.GetCurrentDirectory(), "index.html"),
-        "/app/index.html",
-        "/app/out/index.html"
+        "index.html"
     };
 
-    foreach (var path in locaisPossiveis)
-    {
-        if (File.Exists(path))
-        {
-            return Results.Content(File.ReadAllText(path), "text/html");
-        }
+    foreach (var p in locais) {
+        if (File.Exists(p)) return Results.Content(File.ReadAllText(p), "text/html");
     }
 
-    return Results.Content($"<h1>API BSFM Online</h1><p>index.html nao encontrado.</p><small>Rodando em: {Directory.GetCurrentDirectory()}</small>", "text/html");
+    return Results.Content("<h1>BSFM Online</h1>", "text/html");
 });
 
 // 7. ROTA DE CADASTRO
