@@ -2,67 +2,55 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>BSFM - Painel do Usuário</title>
+    <title>BSFM - Meu Painel</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
-        .dashboard-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #2ecc71; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
-        .stat-card { background: #f9f9f9; padding: 20px; border-radius: 10px; border-left: 5px solid #2ecc71; }
-        .stat-card h3 { margin: 0; font-size: 14px; color: #7f8c8d; }
-        .stat-card p { margin: 5px 0 0; font-size: 24px; font-weight: 600; color: #2c3e50; }
-        .btn-logout { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; float: right; }
+        body { font-family: 'Poppins', sans-serif; background: #f0f2f5; padding: 20px; }
+        .card { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #2ecc71; }
+        .info-box { background: #f8f9fa; padding: 15px; border-radius: 10px; margin: 10px 0; border-left: 5px solid #2ecc71; text-align: left; }
+        button { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="dashboard-container">
-    <button class="btn-logout" onclick="logout()">Sair</button>
-    <h1>Bem-vindo(a), <span id="nomeUsuario">...</span>!</h1>
+<div class="card">
+    <h1>Bem-vindo(a), <span id="displayNome">...</span>!</h1>
     
-    <div class="grid-stats">
-        <div class="stat-card">
-            <h3>Seu IMC</h3>
-            <p id="infoIMC">0.0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Metabolismo Basal (TMB)</h3>
-            <p id="infoTMB">0 kcal</p>
-        </div>
-        <div class="stat-card">
-            <h3>Gasto Calórico Total</h3>
-            <p id="infoGasto">0 kcal</p>
-        </div>
-        <div class="stat-card">
-            <h3>Perfil</h3>
-            <p id="infoPerfil">...</p>
-        </div>
+    <div class="info-box">
+        <strong>Seu IMC:</strong> <span id="displayIMC"></span>
     </div>
+    <div class="info-box">
+        <strong>Metabolismo Basal:</strong> <span id="displayTMB"></span> kcal
+    </div>
+    <div class="info-box">
+        <strong>Gasto Diário Estimado:</strong> <span id="displayGasto"></span> kcal
+    </div>
+
+    <button onclick="sair()">Sair</button>
 </div>
 
 <script>
-    // Executa ao carregar a página
+    // Quando a página abre, ela verifica se há alguém logado
     window.onload = function() {
-        const dadosSalvos = localStorage.getItem('usuarioLogado');
-
-        if (!dadosSalvos) {
-            // Se não houver dados, manda de volta para o login
+        const dados = localStorage.getItem('usuarioLogado');
+        
+        if (!dados) {
+            // Se não tem dados, volta para o login
             window.location.href = 'index.html';
             return;
         }
 
-        const user = JSON.parse(dadosSalvos);
-
-        // Preenche a página com os dados do banco
-        document.getElementById('nomeUsuario').innerText = user.nome;
-        document.getElementById('infoIMC').innerText = user.imc;
-        document.getElementById('infoTMB').innerText = user.tmb + " kcal";
-        document.getElementById('infoGasto').innerText = user.gastoTotal + " kcal";
-        document.getElementById('infoPerfil').innerText = user.tipoPessoa;
+        const user = JSON.parse(dados);
+        
+        // Preenche a tela com os dados vindos do C#
+        document.getElementById('displayNome').innerText = user.nome;
+        document.getElementById('displayIMC').innerText = user.imc;
+        document.getElementById('displayTMB').innerText = user.tmb;
+        document.getElementById('displayGasto').innerText = user.gasto;
     };
 
-    function logout() {
+    function sair() {
         localStorage.removeItem('usuarioLogado');
         window.location.href = 'index.html';
     }

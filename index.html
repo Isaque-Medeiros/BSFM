@@ -216,16 +216,16 @@ async function login() {
             const user = await resp.json();
             
             // 1. Salva os dados no navegador (LocalStorage)
+            // Isso permite que a próxima página saiba quem está logado
             localStorage.setItem('usuarioLogado', JSON.stringify(user));
 
-            // 2. Redireciona para a página do painel
+            // 2. Redireciona para a página do painel (Dashboard)
             window.location.href = 'dashboard.html'; 
         } else {
-            const erro = await resp.json();
-            exibirMensagem(`⚠️ ${erro.mensagem}`, "#fff3cd", "#856404");
+            exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fff3cd", "#856404");
         }
     } catch (err) {
-        exibirMensagem("❌ Servidor C# offline.", "#f8d7da", "#721c24");
+        exibirMensagem("❌ Erro ao conectar com o servidor.", "#f8d7da", "#721c24");
     }
 }
 
