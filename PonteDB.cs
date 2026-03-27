@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ClassesBSFM;
+using System; // Necessário para Environment e Uri
 
 namespace PonteBanco
 {
