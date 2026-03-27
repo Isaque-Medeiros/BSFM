@@ -78,6 +78,14 @@ app.MapPost("/login", (LoginDTO dadosLogin) =>
         }
     }
 });
+app.MapGet("/debug-usuarios", () => 
+{
+    using (var db = new BSFMContext())
+    {
+        // Retorna todos os usuários cadastrados no arquivo SQLite atual
+        return Results.Ok(db.Usuarios.ToList());
+    }
+});
 app.Run();
 
 public record LoginDTO(string Email, string Senha);
