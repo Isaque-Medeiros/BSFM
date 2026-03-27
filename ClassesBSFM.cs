@@ -28,7 +28,7 @@ namespace ClassesBSFM
 
         public Usuario() {
             AceitouTermos = false;
-            DataAceite = DateTime.Now;
+            DataAceite = DateTime.UtcNow; 
         }
     }
 

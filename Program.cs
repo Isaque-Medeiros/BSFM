@@ -6,6 +6,8 @@ using PonteBanco;
 using System.Linq;
 using System.Net;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // PEGA A PORTA DO RAILWAY OU USA 8080 POR PADRÃO
