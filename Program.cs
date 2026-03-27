@@ -6,6 +6,9 @@ using System.Linq; // Necessário para o FirstOrDefault
 
 var builder = WebApplication.CreateBuilder(args);
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 // 1. Configuração de Serviços
 builder.Services.AddCors(options => {
     options.AddPolicy("PermitirSite", policy => 
@@ -75,10 +78,5 @@ app.MapPost("/login", (LoginDTO dadosLogin) =>
         }
     }
 });
-
-// 3. Classe DTO e Inicialização (SEMPRE NO FINAL)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.MapGet("/", () => "O servidor BSFM esta Online!");
-app.Run($"http://0.0.0.0:{port}");
 
 public record LoginDTO(string Email, string Senha);
