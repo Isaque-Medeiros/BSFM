@@ -3,200 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSFM - Meu Painel</title>
-    <!-- Google Fonts -->
+    <title>BSFM - High Intelligence Nutrition</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #0a0b0d;
-            --bg-container: rgba(20, 25, 30, 0.7);
-            --accent-color: #00f2ff;
-            --accent-glow: rgba(0, 242, 255, 0.3);
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --input-border: rgba(0, 242, 255, 0.15);
-            --glass-blur: blur(15px);
-            --danger-color: #ff4757;
+            --bg-dark: #070809;
+            --bg-card: rgba(20, 25, 30, 0.7);
+            --sidebar-width: 260px;
+            --accent-cyan: #00f2ff;
+            --accent-glow: rgba(0, 242, 255, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: rgba(0, 242, 255, 0.15);
+            --glass: blur(15px);
+            --danger: #ff4757;
         }
 
         .light-mode {
-            --bg-body: #f4f7f6;
-            --bg-container: rgba(255, 255, 255, 0.9);
-            --accent-color: #008b8b;
-            --accent-glow: rgba(0, 139, 139, 0.2);
-            --text-main: #2c3e50;
-            --text-dim: #7f8c8d;
-            --card-bg: #ffffff;
-            --input-border: #d1d8e0;
+            --bg-dark: #f0f4f8;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --accent-cyan: #008b8b;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #d1d8e0;
         }
+
+        * { box-sizing: border-box; }
 
         body { 
             font-family: 'Poppins', sans-serif; 
-            background-color: var(--bg-body);
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(0, 242, 255, 0.03) 0%, transparent 30%),
-                radial-gradient(circle at 100% 100%, rgba(0, 242, 255, 0.03) 0%, transparent 30%);
-            color: var(--text-main);
+            background: var(--bg-dark); 
+            color: var(--text-primary);
+            margin: 0; 
             display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
-            margin: 0;
-            transition: background 0.5s ease;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
         }
 
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--bg-container);
-            border: 1px solid var(--input-border);
-            color: var(--accent-color);
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 11px;
-            backdrop-filter: var(--glass-blur);
+        /* BARRA LATERAL - NAVEGAÇÃO */
+        aside {
+            width: var(--sidebar-width);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            backdrop-filter: var(--glass);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
         }
 
-        .dashboard-container { 
-            background: var(--bg-container); 
-            width: 90%;
-            max-width: 600px; 
-            padding: 40px; 
-            border-radius: 30px; 
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--input-border);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            text-align: center;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        h1 { 
+        .logo {
             font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            color: var(--accent-cyan);
             font-size: 22px;
-            margin-bottom: 30px; 
-            letter-spacing: 1px;
-            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 50px;
+            letter-spacing: 2px;
         }
 
-        #displayNome {
-            color: var(--accent-color);
-            text-shadow: 0 0 10px var(--accent-glow);
-        }
+        nav { flex-grow: 1; }
 
-        /* Layout em Grade para Métricas */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            border: 1px solid var(--input-border);
-            padding: 20px;
-            border-radius: 20px;
-            transition: 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-color);
-            box-shadow: 0 10px 20px rgba(0, 242, 255, 0.1);
-        }
-
-        .metric-card strong {
-            display: block;
-            font-size: 11px;
-            text-transform: uppercase;
-            color: var(--text-dim);
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
             margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-
-        .metric-card span {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--accent-color);
-        }
-
-        /* Diferenciação de métricas (kcal vs unitario) */
-        .metric-value-large { font-size: 20px !important; }
-
-        .btn-exit { 
-            background: transparent;
-            color: var(--danger-color); 
-            border: 1px solid var(--danger-color); 
-            padding: 12px 30px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-weight: 600;
+            border-radius: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
             transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 255, 0.05);
+            border-color: var(--border);
+        }
+
+        .nav-item span { font-size: 14px; font-weight: 600; }
+
+        /* CONTEÚDO PRINCIPAL */
+        main {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            padding: 40px;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .user-greeting h1 {
+            font-size: 24px;
+            margin: 0;
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .user-greeting span { color: var(--accent-cyan); }
+
+        /* GRID DO DASHBOARD */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: var(--glass);
+            transition: 0.3s;
+        }
+
+        /* Estilos Variados para os RFs */
+        .card-stats { grid-column: span 8; }
+        .card-vision { grid-column: span 4; }
+        .card-goals { grid-column: span 12; display: flex; gap: 20px; justify-content: space-around; }
+        .card-small { grid-column: span 3; }
+        .card-medium { grid-column: span 6; }
+
+        .metric { text-align: center; }
+        .metric-label { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; margin-bottom: 5px; }
+        .metric-value { font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--accent-cyan); }
+
+        /* Estilo Botão de Trocar Tema e Sair */
+        .action-btns { display: flex; gap: 10px; }
+        .top-btn { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border);
+            color: var(--text-primary); 
+            padding: 8px 15px; 
+            border-radius: 10px; 
+            cursor: pointer; 
             font-size: 12px;
         }
 
-        .btn-exit:hover { 
-            background: var(--danger-color);
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
+        .btn-danger { color: var(--danger); border-color: rgba(255,71,87,0.3); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        /* Badges de IDs dos Requisitos (Destaque UX) */
+        .rf-tag { 
+            font-size: 10px; 
+            background: rgba(0, 242, 255, 0.1); 
+            color: var(--accent-cyan); 
+            padding: 2px 8px; 
+            border-radius: 5px;
+            margin-left: 10px;
+            border: 0.5px solid var(--border);
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        h3 { font-size: 16px; margin-top: 0; display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
-        /* Estilo responsivo mobile */
-        @media (max-width: 480px) {
-            .metrics-grid { grid-template-columns: 1fr; }
-            .dashboard-container { padding: 25px; }
+        /* Mídia query para dispositivos pequenos */
+        @media (max-width: 1024px) {
+            aside { width: 80px; }
+            aside .nav-item span, aside .logo { display: none; }
+            main { margin-left: 80px; width: calc(100% - 80px); }
+            .card-stats, .card-vision, .card-small, .card-medium { grid-column: span 12; }
         }
     </style>
 </head>
 <body>
 
-<button class="theme-toggle" onclick="toggleTheme()">DARK / LIGHT</button>
-
-<div class="dashboard-container">
-    <h1>BEM-VINDO, <span id="displayNome">...</span>!</h1>
-    
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <strong>Meu IMC</strong>
-            <span id="displayIMC">--</span>
+    <!-- SIDEBAR NAV (Base para escalabilidade do site) -->
+    <aside>
+        <div class="logo">BSFM.IO</div>
+        <nav>
+            <div class="nav-item active"><span>⊞ Painel Principal</span></div>
+            <div class="nav-item"><span>📖 Diário Nutricional <small class="rf-tag">RF06</small></span></div>
+            <div class="nav-item"><span>📷 Analisador IA <small class="rf-tag">RF03</small></span></div>
+            <div class="nav-item"><span>📉 Minhas Metas <small class="rf-tag">RF07</small></span></div>
+            <div class="nav-item"><span>📍 SOS Saúde <small class="rf-tag">RF05</small></span></div>
+            <div class="nav-item"><span>👤 Meu Perfil <small class="rf-tag">RF01</small></span></div>
+            <div class="nav-item"><span>🤟 Acessibilidade <small class="rf-tag">RF08</small></span></div>
+        </nav>
+        <div class="action-btns" style="flex-direction: column;">
+            <button class="top-btn" onclick="toggleTheme()">🌓 Alternar Tema</button>
+            <button class="top-btn btn-danger" onclick="sair()">✕ Encerrar</button>
         </div>
-        
-        <div class="metric-card">
-            <strong>Metabolismo Basal</strong>
-            <span id="displayTMB" class="metric-value-large">--</span> <small style="color:var(--text-dim)">kcal</small>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main>
+        <header>
+            <div class="user-greeting">
+                <p style="margin:0; color:var(--text-secondary)">Bio-análise de Sistema</p>
+                <h1>Bem-vindo, <span id="displayNome">...</span>!</h1>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-family: 'Orbitron'; font-size: 14px; color: var(--accent-cyan)">STatus: Online</div>
+                <div style="font-size: 10px; color: var(--text-secondary)">BioSync Ativo</div>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            
+            <!-- RESULTADOS PRINCIPAIS (Cálculos dinâmicos via JS original) -->
+            <div class="card card-stats">
+                <h3>Resumo Biométrico <small class="rf-tag">RF02</small></h3>
+                <div style="display:flex; justify-content: space-around; align-items: center; min-height: 100px;">
+                    <div class="metric">
+                        <div class="metric-label">Massa Corporal (IMC)</div>
+                        <div class="metric-value" id="displayIMC">--</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Gasto Basal (TMB)</div>
+                        <div class="metric-value" id="displayTMB">--</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">TDEE Est.</div>
+                        <div class="metric-value" id="displayGasto">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANALISADOR VISUAL IA (Futuro esqueleto de Visão Computacional) -->
+            <div class="card card-vision">
+                <h3>Vision IA Scanner <small class="rf-tag">RF03/RF04</small></h3>
+                <div style="border: 2px dashed var(--border); height: 100px; border-radius: 15px; display:flex; align-items:center; justify-content:center; color: var(--text-secondary); flex-direction: column;">
+                   <small>📷 Clique para Scanear Prato</small>
+                   <small style="font-size: 10px; margin-top: 5px;">Reconhecimento de Oxidação/Frescor</small>
+                </div>
+            </div>
+
+            <!-- MODULO DE LIBRAS -->
+            <div class="card card-small" style="background: rgba(46, 204, 113, 0.05);">
+                <h3>🤟 Acessibilidade <small class="rf-tag">RF08</small></h3>
+                <small style="color:var(--text-secondary)">Aprenda alimentação saudável em LIBRAS.</small>
+                <button class="top-btn" style="width:100%; margin-top:10px;">Ver Vídeos</button>
+            </div>
+
+            <!-- METAS SEMANAIS (Visualizador) -->
+            <div class="card card-medium">
+                <h3>Foco Semanal <small class="rf-tag">RF07</small></h3>
+                <div style="display:flex; flex-direction:column; gap: 10px;">
+                    <div style="height: 12px; background: #222; border-radius: 6px; position:relative; overflow:hidden">
+                        <div style="width: 65%; height:100%; background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan);"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px;">
+                        <span>Meta de Hidratação</span>
+                        <span>65% atingido</span>
+                    </div>
+                </div>
+            </div>
+
+             <!-- BOTÃO EMERGÊNCIA LOCALIZAÇÃO -->
+             <div class="card card-small" style="border-color: rgba(255, 71, 87, 0.5);">
+                <h3>📍 Médicos Perto <small class="rf-tag">RF05</small></h3>
+                <small>Geolocalização de emergência.</small>
+                <button class="top-btn btn-danger" style="width:100%; margin-top:10px;">Mapa de UPAs</button>
+            </div>
+
         </div>
-
-        <div class="metric-card">
-            <strong>Gasto Diário (TDEE)</strong>
-            <span id="displayGasto" class="metric-value-large">--</span> <small style="color:var(--text-dim)">kcal</small>
-        </div>
-    </div>
-
-    <!-- Se precisar adicionar mais funcionalidades futuramente, elas entrarão aqui em novos cards -->
-
-    <button class="btn-exit" onclick="sair()">Finalizar Sessão</button>
-</div>
+    </main>
 
 <script>
-    // UX: Alternar entre temas
+    // Gerenciador de Tema
     function toggleTheme() {
         document.body.classList.toggle('light-mode');
     }
 
-    // --- SUA LÓGICA ORIGINAL ABAIXO (MANTIDA INTEGRALMENTE) ---
+    // --- MANTENDO SEU JS ORIGINAL PARA AS FUNÇÕES LOGADAS ---
 
     window.onload = function() {
         const dados = localStorage.getItem('usuarioLogado');
@@ -208,7 +287,8 @@
 
         const user = JSON.parse(dados);
         
-        document.getElementById('displayNome').innerText = user.nome.toUpperCase();
+        // PREECHIMENTO DINÂMICO DOS SEUS IDs EXISTENTES
+        document.getElementById('displayNome').innerText = user.nome;
         document.getElementById('displayIMC').innerText = user.imc;
         document.getElementById('displayTMB').innerText = user.tmb;
         document.getElementById('displayGasto').innerText = user.gasto;
