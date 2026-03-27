@@ -27,8 +27,13 @@ builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
 
-app.UseDefaultFiles(); // Procura por index.html automaticamente
-app.UseStaticFiles();  // Permite servir dashboard.html, CSS, etc.
+app.UseDefaultFiles(); // Procura index.html na raiz
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        System.IO.Path.Combine(app.Environment.ContentRootPath)),
+    RequestPath = ""
+});
 
 app.UseCors("PermitirSite");
 
