@@ -4,79 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSFM - Portal Nutricional</title>
-    <!-- Google Fonts para um ar mais moderno -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2ecc71;
-            --primary-hover: #27ae60;
-            --bg-color: #f4f7f6;
-            --text-color: #34495e;
-            --card-bg: #ffffff;
+            /* Tema Escuro (Padrão) */
+            --bg-body: #0a0b0d;
+            --bg-container: rgba(20, 25, 30, 0.8);
+            --accent-color: #00f2ff; /* Turquesa Neon */
+            --accent-glow: rgba(0, 242, 255, 0.5);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(0, 242, 255, 0.2);
+            --glass-blur: blur(12px);
+        }
+
+        /* Classe para Modo Claro */
+        .light-mode {
+            --bg-body: #f0f4f8;
+            --bg-container: rgba(255, 255, 255, 0.9);
+            --accent-color: #008b8b;
+            --accent-glow: rgba(0, 139, 139, 0.3);
+            --text-main: #2c3e50;
+            --text-dim: #7f8c8d;
+            --input-bg: #ffffff;
+            --input-border: #d1d8e0;
         }
 
         body { 
             font-family: 'Poppins', sans-serif; 
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 20%);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            transition: background 0.5s ease;
+        }
+
+        /* Botão de Troca de Tema */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-container);
+            border: 1px solid var(--input-border);
+            color: var(--accent-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: var(--glass-blur);
+            transition: 0.3s;
         }
 
         .container { 
-            background: var(--card-bg); 
-            width: 100%;
-            max-width: 450px; 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background: var(--bg-container); 
+            width: 90%;
+            max-width: 420px; 
+            padding: 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 2px var(--accent-color);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--input-border);
+            position: relative;
         }
 
-        h2 { text-align: center; color: var(--primary-color); margin-bottom: 25px; }
+        h2 { 
+            text-align: center; 
+            color: var(--accent-color); 
+            margin-bottom: 30px; 
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
 
-        /* Abas de navegação */
-        .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid #eee; }
+        /* Abas */
+        .tabs { 
+            display: flex; 
+            margin-bottom: 30px; 
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 5px;
+        }
         .tab-btn { 
-            flex: 1; padding: 10px; border: none; background: none; 
-            cursor: pointer; font-size: 16px; font-weight: 600; color: #95a5a6;
-            transition: 0.3s;
+            flex: 1; padding: 12px; border: none; background: none; 
+            cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-dim);
+            transition: 0.4s;
+            border-radius: 8px;
         }
-        .tab-btn.active { color: var(--primary-color); border-bottom: 2px solid var(--primary-color); }
+        .tab-btn.active { 
+            color: var(--bg-body); 
+            background: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
 
         .form-section { display: none; }
-        .form-section.active { display: block; animation: fadeIn 0.4s ease; }
+        .form-section.active { display: block; animation: slideUp 0.5s ease forwards; }
 
-        .campo { margin-bottom: 15px; }
-        label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: 600; }
+        .campo { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; margin-bottom: 8px; font-weight: 400; color: var(--text-dim); }
         
         input, select { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; 
-            font-size: 14px; box-sizing: border-box; transition: 0.3s;
+            width: 100%; padding: 12px 16px; 
+            background: var(--input-bg);
+            border: 1px solid var(--input-border); 
+            border-radius: 10px; 
+            font-size: 14px; 
+            color: var(--text-main);
+            box-sizing: border-box; 
+            transition: 0.3s;
         }
-        input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 5px rgba(46, 204, 113, 0.3); }
+        input:focus { 
+            border-color: var(--accent-color); 
+            outline: none; 
+            box-shadow: 0 0 10px var(--accent-glow);
+            background: rgba(255,255,255,0.1);
+        }
 
         button { 
-            background-color: var(--primary-color); color: white; border: none; 
-            padding: 14px; width: 100%; cursor: pointer; border-radius: 8px; 
-            font-size: 16px; font-weight: 600; transition: 0.3s; margin-top: 10px;
+            background: var(--accent-color); 
+            color: #000; 
+            border: none; 
+            padding: 16px; 
+            width: 100%; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s; 
+            margin-top: 15px;
         }
-        button:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 20px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        /* Estilo específico para o botão de Login sugerido no seu código */
+        #login button {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+        #login button:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
 
         #resultado { 
-            margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 14px;
-            display: none; text-align: center; line-height: 1.6;
+            margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 14px;
+            display: none; text-align: center; border: 1px solid transparent;
         }
 
-        .row { display: flex; gap: 10px; }
+        .row { display: flex; gap: 15px; }
         .row .campo { flex: 1; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Estilização dos Selects no modo dark */
+        select option { background: #1a1a1a; color: #fff; }
     </style>
 </head>
 <body>
+
+<button class="theme-toggle" onclick="toggleTheme()">DARK / LIGHT</button>
 
 <div class="container">
     <h2>BSFM Nutri</h2>
@@ -147,17 +251,24 @@
             <label>Senha:</label>
             <input type="password" id="login_senha" placeholder="Sua senha">
         </div>
-        <button onclick="login()" style="background-color: #34495e;">Entrar no Painel</button>
+        <!-- Mantive o estilo inline mas o CSS agora trata o visual futurista -->
+        <button onclick="login()">Entrar no Painel</button>
     </div>
 
     <div id="resultado"></div>
 </div>
 
 <script>
-    // URL do servidor (Verifique se no seu terminal aparece 5000 ou 5054)
+    // Função Extra para trocar tema (UI/UX)
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+    }
+
+    // --- SEU JAVASCRIPT ORIGINAL ABAIXO (SEM ALTERAÇÕES DE LÓGICA) ---
+    
     const API_URL = 'https://bsfm-production.up.railway.app';
 
-    function switchTab(event, tabId) { // Adicione o parâmetro event
+    function switchTab(event, tabId) { 
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active'); 
@@ -193,51 +304,46 @@
             });
             const data = await resp.json();
             
-            exibirMensagem(`✅ ${data.mensagem}<br>Faça login para continuar.`, "#d4edda", "#155724");
+            exibirMensagem(`✅ ${data.mensagem}<br>Faça login para continuar.`, "rgba(46, 204, 113, 0.2)", "#2ecc71");
         } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "#f8d7da", "#721c24");
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
         }
     }
 
-async function login() {
-    const dados = {
-        Email: document.getElementById('login_email').value,
-        Senha: document.getElementById('login_senha').value
-    };
+    async function login() {
+        const dados = {
+            Email: document.getElementById('login_email').value,
+            Senha: document.getElementById('login_senha').value
+        };
 
-    try {
-        const resp = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        });
+        try {
+            const resp = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
 
-        if (resp.ok) {
-            const user = await resp.json();
-            
-            // 1. Salva os dados no navegador (LocalStorage)
-            // Isso permite que a próxima página saiba quem está logado
-            localStorage.setItem('usuarioLogado', JSON.stringify(user));
-
-            // 2. Redireciona para a página do painel (Dashboard)
-            window.location.href = 'dashboard.html'; 
-        } else {
-            exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fff3cd", "#856404");
+            if (resp.ok) {
+                const user = await resp.json();
+                localStorage.setItem('usuarioLogado', JSON.stringify(user));
+                window.location.href = 'dashboard.html'; 
+            } else {
+                exibirMensagem("⚠️ E-mail ou senha incorretos.", "rgba(241, 196, 15, 0.2)", "#f1c40f");
+            }
+        } catch (err) {
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
         }
-    } catch (err) {
-        exibirMensagem("❌ Erro ao conectar com o servidor.", "#f8d7da", "#721c24");
     }
-}
 
     function exibirMensagem(texto, fundo, cor) {
         const resDiv = document.getElementById('resultado');
         resDiv.style.display = "block";
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
+        resDiv.style.borderColor = cor;
         resDiv.innerHTML = texto;
     }
 </script>
 
 </body>
 </html>
-
