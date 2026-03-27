@@ -39,15 +39,19 @@ try {
 // ROTA RAIZ (Onde o site carrega)
 app.MapGet("/", () => 
 {
-    try {
-        string path = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
-        if (File.Exists(path)) {
-            return Results.Content(File.ReadAllText(path), "text/html");
-        } else {
-            return Results.Content("<h1>Aviso</h1><p>index.html nao encontrado na pasta root.</p>", "text/html");
-        }
-    } catch (Exception ex) {
-        return Results.Content($"<h1>Erro no Servidor</h1><p>{ex.Message}</p>", "text/html");
+    // AppContext.BaseDirectory é o caminho MAIS SEGURO no Railway
+    string rootPath = AppContext.BaseDirectory;
+    string path = Path.Combine(rootPath, "index.html");
+
+    // Caso não esteja na pasta de saída (out), tentamos na pasta pai
+    if (!File.Exists(path)) {
+        path = Path.Combine(Directory.GetCurrentDirectory(), "index.html");
+    }
+
+    if (File.Exists(path)) {
+        return Results.Content(File.ReadAllText(path), "text/html");
+    } else {
+        return Results.Content($"<h1>Aviso</h1><p>index.html nao encontrado.</p><small>Base: {rootPath}</small>", "text/html");
     }
 });
 
