@@ -70,18 +70,35 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
 });
 
 // 8. ROTA DE LOGIN
-app.MapPost("/login", (LoginDTO dadosLogin) => {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
-    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
-    
-    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
+app.MapPost("/login", (LoginDTO dadosLogin) => 
+{
+    using (var db = new BSFMContext())
     {
-        return Results.Ok(new { nome = user.Nome, imc = user.IMC });
+        string emailProcurado = dadosLogin.Email.Trim().ToLower();
+        var usuarioNoBanco = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == emailProcurado);
+
+        if (usuarioNoBanco == null) 
+            return Results.Json(new { mensagem = "E-mail não encontrado." }, statusCode: 400);
+
+        bool senhaCorreta = BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, usuarioNoBanco.SenhaHash);
+
+        if (senhaCorreta)
+        {
+            // Retornamos um objeto completo para o Front-end salvar
+            return Results.Ok(new { 
+                id = usuarioNoBanco.ID,
+                nome = usuarioNoBanco.Nome,
+                email = usuarioNoBanco.Email,
+                imc = usuarioNoBanco.IMC,
+                tmb = usuarioNoBanco.TMB,
+                gastoTotal = usuarioNoBanco.GastoTotal,
+                peso = usuarioNoBanco.Peso,
+                altura = usuarioNoBanco.Altura,
+                tipoPessoa = usuarioNoBanco.TipoPessoa
+            });
+        }
+        return Results.Json(new { mensagem = "Senha incorreta." }, statusCode: 400);
     }
-    
-    return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
 });
 
 // 9. ROTA DE DEBUG (Para ver se os usuários estão lá)

@@ -199,29 +199,35 @@
         }
     }
 
-    async function login() {
-        const dados = {
-            Email: document.getElementById('login_email').value,
-            Senha: document.getElementById('login_senha').value
-        };
+async function login() {
+    const dados = {
+        Email: document.getElementById('login_email').value,
+        Senha: document.getElementById('login_senha').value
+    };
 
-        try {
-            const resp = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
+    try {
+        const resp = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
 
-            if (resp.ok) {
-                const user = await resp.json();
-                exibirMensagem(`🔥 Bem-vindo(a), ${user.nome}!<br>Seu IMC é: ${user.imc}`, "#d4edda", "#155724");
-            } else {
-                exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fff3cd", "#856404");
-            }
-        } catch (err) {
-            exibirMensagem("❌ Servidor C# offline.", "#f8d7da", "#721c24");
+        if (resp.ok) {
+            const user = await resp.json();
+            
+            // 1. Salva os dados no navegador (LocalStorage)
+            localStorage.setItem('usuarioLogado', JSON.stringify(user));
+
+            // 2. Redireciona para a página do painel
+            window.location.href = 'dashboard.html'; 
+        } else {
+            const erro = await resp.json();
+            exibirMensagem(`⚠️ ${erro.mensagem}`, "#fff3cd", "#856404");
         }
+    } catch (err) {
+        exibirMensagem("❌ Servidor C# offline.", "#f8d7da", "#721c24");
     }
+}
 
     function exibirMensagem(texto, fundo, cor) {
         const resDiv = document.getElementById('resultado');
@@ -234,3 +240,4 @@
 
 </body>
 </html>
+
