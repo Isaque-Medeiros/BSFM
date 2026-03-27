@@ -34,6 +34,7 @@ app.UseStaticFiles(new StaticFileOptions
         System.IO.Path.Combine(app.Environment.ContentRootPath)),
     RequestPath = ""
 });
+app.UseStaticFiles();  // Permite servir dashboard.html, CSS, etc.
 
 app.UseCors("PermitirSite");
 
