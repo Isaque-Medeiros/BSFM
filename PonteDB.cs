@@ -16,8 +16,31 @@ namespace PonteBanco
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            // O caminho do banco de dados
-            options.UseSqlite("Data Source=UsuariosBSFM.db");
+            // O Railway fornece essa variável automaticamente
+            string? connectionUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+            if (string.IsNullOrEmpty(connectionUrl))
+            {
+                // Se estiver rodando no seu PC sem internet/config, usa SQLite
+                options.UseSqlite("Data Source=UsuariosBSFM.db");
+            }
+            else
+            {
+                // AJUSTE PARA O RAILWAY: 
+                // O Railway entrega a URL no formato postgres://... 
+                // O Npgsql precisa converter esse formato para uma String de Conexão.
+                var databaseUri = new Uri(connectionUrl);
+                var userInfo = databaseUri.UserInfo.Split(':');
+
+                var connectionString = $"Host={databaseUri.Host};" +
+                                    $"Port={databaseUri.Port};" +
+                                    $"Username={userInfo[0]};" +
+                                    $"Password={userInfo[1]};" +
+                                    $"Database={databaseUri.LocalPath.TrimStart('/')};" +
+                                    "SSL Mode=Require;Trust Server Certificate=true;";
+
+                options.UseNpgsql(connectionString);
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
