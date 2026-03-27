@@ -26,6 +26,10 @@ builder.Services.AddCors(options => {
 builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
+
+app.UseDefaultFiles(); // Procura por index.html automaticamente
+app.UseStaticFiles();  // Permite servir dashboard.html, CSS, etc.
+
 app.UseCors("PermitirSite");
 
 // 3. DATABASE (Igual ao seu anterior)
