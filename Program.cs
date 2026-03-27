@@ -6,15 +6,18 @@ using PonteBanco;
 using System.Linq;
 using System.Net;
 
-// 1. DATABASE COMPATIBILITY
+// 1. DATA FIX
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 2. PORTA (REMOVI O CONFIGUREKESTREL MANUAL)
-// Deixamos o .NET gerenciar a porta automaticamente via variáveis do Railway
+// 2. PORTA DIRETA DO AMBIENTE (Forma mais estável para Nixpacks/Railway)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Ouvir em todas as interfaces na porta fornecida pela nuvem
+    options.ListenAnyIP(int.Parse(port));
+});
 
 builder.Services.AddCors(options => {
     options.AddPolicy("PermitirSite", policy => 
@@ -25,7 +28,7 @@ builder.Services.AddDbContext<BSFMContext>();
 var app = builder.Build();
 app.UseCors("PermitirSite");
 
-// 3. DATABASE INIT (Simplificado)
+// 3. DATABASE (Igual ao seu anterior)
 try {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
@@ -35,22 +38,20 @@ try {
     Console.WriteLine($"[AVISO BANCO]: {ex.Message}");
 }
 
-// 4. ROTA RAIZ (Com Log de Monitoramento)
-app.MapGet("/", (HttpContext context) => 
+// 4. MONITORAMENTO E ROTA RAIZ
+app.MapGet("/", async (context) => 
 {
-    Console.WriteLine($"[LOG] Recebi uma visita de: {context.Connection.RemoteIpAddress}");
+    Console.WriteLine($"[LOG] Health Check Recebido de: {context.Connection.RemoteIpAddress}");
     
-    string[] locais = {
-        Path.Combine(AppContext.BaseDirectory, "index.html"),
-        Path.Combine(Directory.GetCurrentDirectory(), "index.html"),
-        "index.html"
-    };
+    // Caminho prioritário na publicação .NET
+    string path = Path.Combine(AppContext.BaseDirectory, "index.html");
+    if (!File.Exists(path)) path = "index.html";
 
-    foreach (var p in locais) {
-        if (File.Exists(p)) return Results.Content(File.ReadAllText(p), "text/html");
+    if (File.Exists(path)) {
+        await context.Response.WriteAsync(File.ReadAllText(path));
+    } else {
+        await context.Response.WriteAsync("<h1>BSFM ONLINE</h1><p>Aguardando primeiro cadastro.</p>");
     }
-
-    return Results.Content("<h1>BSFM Online</h1>", "text/html");
 });
 
 // 7. ROTA DE CADASTRO
