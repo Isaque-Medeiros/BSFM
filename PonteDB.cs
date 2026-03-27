@@ -12,27 +12,30 @@ namespace PonteBanco
         public DbSet<CronogramaAlimentar> Cronogramas { get; set; }
         public DbSet<Hospital> Hospitais { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-        {
-            var connectionUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        var connectionUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-            if (string.IsNullOrEmpty(connectionUrl))
-            {
-                options.UseSqlite("Data Source=UsuariosBSFM.db");
-            }
-            else
-            {
-                // Limpeza e ajuste da URL do Railway para o Npgsql
-                connectionUrl = connectionUrl.Replace("postgres://", "postgresql://");
-                options.UseNpgsql(connectionUrl, npgsqlOptions => {
-                    npgsqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-                });
-            }
+        if (string.IsNullOrEmpty(connectionUrl))
+        {
+            options.UseSqlite("Data Source=UsuariosBSFM.db");
         }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        else
         {
-            modelBuilder.Entity<Refeição>().ToTable("Refeicoes");
+            // Parsing manual da URL do Railway para evitar erro de formato
+            var databaseUri = new Uri(connectionUrl);
+            var userInfo = databaseUri.UserInfo.Split(':');
+
+            var connectionString = $"Host={databaseUri.Host};" +
+                                $"Port={databaseUri.Port};" +
+                                $"Username={userInfo[0]};" +
+                                $"Password={userInfo[1]};" +
+                                $"Database={databaseUri.LocalPath.TrimStart('/')};" +
+                                "SSL Mode=Require;" +
+                                "Trust Server Certificate=true;" +
+                                "Pooling=true;";
+
+            options.UseNpgsql(connectionString);
         }
     }
 }
