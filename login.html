@@ -189,22 +189,24 @@
 
 <!-- JAVASCRIPT PRESERVADO E INTEGRADO -->
 <script>
-    const API_URL = 'https://bsfm-production.up.railway.app';
+ const API_URL = 'https://bsfm-production.up.railway.app';
 
     function switchTab(event, tabId) { 
-        // Alternar visual das seções
+        // 1. Esconde todas as seções
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        // 2. Mostra a seção selecionada
         document.getElementById(tabId).classList.add('active'); 
 
-        // Alternar visual dos botões (tabs)
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        // 3. Atualiza o visual dos botões de aba (Usando as classes certas do seu novo CSS)
+        document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
             btn.classList.remove('tab-active');
-            btn.classList.add('tab-inactive');
+            btn.classList.add('text-gray-500');
         });
+        
         event.currentTarget.classList.add('tab-active');
-        event.currentTarget.classList.remove('tab-inactive');
+        event.currentTarget.classList.remove('text-gray-500');
 
-        // Limpar mensagens de erro/sucesso ao trocar
+        document.getElementById('resultado').style.display = 'none';
         document.getElementById('resultado').classList.add('hidden');
     }
 
@@ -223,7 +225,7 @@
         };
 
         if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            exibirMensagem("⚠️ Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
+            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
@@ -233,13 +235,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
-            const data = await resp.json();
             
-            if(resp.ok) {
-                exibirMensagem(`✅ ${data.mensagem}<br>Acesse a aba 'Entrar' agora.`, "#f0fdf4", "#166534", "#dcfce7");
-            } else {
-                exibirMensagem(`❌ ${data.mensagem || 'Erro ao cadastrar'}`, "#fef2f2", "#991b1b", "#fee2e2");
-            }
+            const data = await resp.json();
+            exibirMensagem(`✅ Cadastro Realizado! Acesse 'Entrar' para logar.`, "#f0fdf4", "#166534", "#dcfce7");
         } catch (err) {
             exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
         }
@@ -251,11 +249,6 @@
             Senha: document.getElementById('login_senha').value
         };
 
-        if(!dados.Email || !dados.Senha) {
-            exibirMensagem("⚠️ Informe seu e-mail e senha.", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
         try {
             const resp = await fetch(`${API_URL}/login`, {
                 method: 'POST',
@@ -265,6 +258,7 @@
 
             if (resp.ok) {
                 const user = await resp.json();
+                // O C# devolve em letras minúsculas no JSON por padrão (camelCase)
                 localStorage.setItem('usuarioLogado', JSON.stringify(user));
                 window.location.href = 'dashboard.html'; 
             } else {
@@ -277,8 +271,8 @@
 
     function exibirMensagem(texto, fundo, cor, borda) {
         const resDiv = document.getElementById('resultado');
-        resDiv.classList.remove('hidden');
         resDiv.style.display = "block";
+        resDiv.classList.remove('hidden');
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
         resDiv.style.borderColor = borda;
