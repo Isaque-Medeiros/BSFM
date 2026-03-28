@@ -127,44 +127,28 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    namespace ClassesBSFM
-{
-    // ... Mantenha suas outras classes (Usuario, CalcularNutricional, etc) aqui em cima ...
-
-        public class EmailService 
+    public class EmailService 
         {
             public static void EnviarToken(string emailDestino, string token) 
             {
                 var mensagem = new MimeMessage();
-                // No Mailtrap você pode usar qualquer e-mail no "From"
                 mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
                 mensagem.To.Add(new MailboxAddress("", emailDestino));
                 mensagem.Subject = "🔐 Código de Ativação BSFM";
 
                 mensagem.Body = new TextPart("html") {
-                    Text = $@"
-                    <div style='font-family: sans-serif; background-color: #f4fdf4; padding: 30px; border-radius: 15px;'>
-                        <div style='max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #d1fae5;'>
-                            <h2 style='color: #059669; text-align: center; margin-bottom: 20px;'>Bem-vindo ao BSFM!</h2>
-                            <p style='color: #4b5563; font-size: 16px; text-align: center;'>Para concluir seu cadastro e ativar sua conta, utilize o código abaixo:</p>
-                            <div style='background: #ecfdf5; border: 2px dashed #10b981; padding: 20px; font-size: 32px; font-weight: bold; text-align: center; color: #065f46; letter-spacing: 10px; margin: 25px 0; border-radius: 12px;'>
-                                {token}
-                            </div>
-                            <p style='color: #9ca3af; font-size: 12px; text-align: center;'>Este é um código temporário para sua segurança.</p>
-                        </div>
-                    </div>"
+                    Text = $"<p>Seu código é: <b>{token}</b></p>"
                 };
 
+                // O 'using' agora sabe exatamente que é o SmtpClient do MailKit
                 using (var client = new SmtpClient()) 
                 {
                     try {
-                        // CONFIGURAÇÕES DO SEU MAILTRAP:
+                        client.Timeout = 10000;
                         client.Connect("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
                         client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
-                        
                         client.Send(mensagem);
                         client.Disconnect(true);
-                        Console.WriteLine($"[MAILTRAP] E-mail enviado com sucesso para: {emailDestino}");
                     }
                     catch (Exception ex) {
                         Console.WriteLine($"[ERRO MAILTRAP]: {ex.Message}");

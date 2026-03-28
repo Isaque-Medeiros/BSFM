@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using ClassesBSFM; // ESTA LINHA É OBRIGATÓRIA
+using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
 
