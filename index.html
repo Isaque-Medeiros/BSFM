@@ -3,347 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BSFM - Portal Nutricional</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>BSFM Nutri - Brazilian System of Food Metric</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            /* Tema Escuro (Padrão) */
-            --bg-body: #0a0b0d;
-            --bg-container: rgba(20, 25, 30, 0.8);
-            --accent-color: #00f2ff; /* Turquesa Neon */
-            --accent-glow: rgba(0, 242, 255, 0.5);
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --input-bg: rgba(255, 255, 255, 0.05);
-            --input-border: rgba(0, 242, 255, 0.2);
-            --glass-blur: blur(12px);
-        }
-
-        /* Classe para Modo Claro */
-        .light-mode {
-            --bg-body: #f0f4f8;
-            --bg-container: rgba(255, 255, 255, 0.9);
-            --accent-color: #008b8b;
-            --accent-glow: rgba(0, 139, 139, 0.3);
-            --text-main: #2c3e50;
-            --text-dim: #7f8c8d;
-            --input-bg: #ffffff;
-            --input-border: #d1d8e0;
-        }
-
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: var(--bg-body);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 20%);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            transition: background 0.5s ease;
-        }
-
-        /* Botão de Troca de Tema */
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--bg-container);
-            border: 1px solid var(--input-border);
-            color: var(--accent-color);
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            backdrop-filter: var(--glass-blur);
-            transition: 0.3s;
-        }
-
-        .container { 
-            background: var(--bg-container); 
-            width: 90%;
-            max-width: 420px; 
-            padding: 40px; 
-            border-radius: 24px; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 2px var(--accent-color);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--input-border);
-            position: relative;
-        }
-
-        h2 { 
-            text-align: center; 
-            color: var(--accent-color); 
-            margin-bottom: 30px; 
-            font-family: 'Orbitron', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px var(--accent-glow);
-        }
-
-        /* Abas */
-        .tabs { 
-            display: flex; 
-            margin-bottom: 30px; 
-            background: var(--input-bg);
-            border-radius: 12px;
-            padding: 5px;
-        }
-        .tab-btn { 
-            flex: 1; padding: 12px; border: none; background: none; 
-            cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-dim);
-            transition: 0.4s;
-            border-radius: 8px;
-        }
-        .tab-btn.active { 
-            color: var(--bg-body); 
-            background: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-glow);
-        }
-
-        .form-section { display: none; }
-        .form-section.active { display: block; animation: slideUp 0.5s ease forwards; }
-
-        .campo { margin-bottom: 20px; }
-        label { display: block; font-size: 13px; margin-bottom: 8px; font-weight: 400; color: var(--text-dim); }
+        body { font-family: 'Inter', sans-serif; }
         
-        input, select { 
-            width: 100%; padding: 12px 16px; 
-            background: var(--input-bg);
-            border: 1px solid var(--input-border); 
-            border-radius: 10px; 
-            font-size: 14px; 
-            color: var(--text-main);
-            box-sizing: border-box; 
-            transition: 0.3s;
-        }
-        input:focus { 
-            border-color: var(--accent-color); 
-            outline: none; 
-            box-shadow: 0 0 10px var(--accent-glow);
-            background: rgba(255,255,255,0.1);
+        /* Imagem de Fundo Full HD com efeito parallax suave */
+        .hero-section {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.5)), 
+                        url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        button { 
-            background: var(--accent-color); 
-            color: #000; 
-            border: none; 
-            padding: 16px; 
-            width: 100%; 
-            cursor: pointer; 
-            border-radius: 12px; 
-            font-size: 15px; 
-            font-weight: 700; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: 0.3s; 
-            margin-top: 15px;
+        /* Navlinks "Soft" com contorno sutil no hover */
+        .nav-link {
+            color: #4b5563; /* Cinza suave */
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid transparent; /* Contorno invisível por padrão */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        button:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 5px 20px var(--accent-glow);
-            filter: brightness(1.1);
+        
+        .nav-link:hover {
+            color: #059669; /* Verde esmeralda */
+            background-color: #f0fdf4; /* Verde bem clarinho de fundo */
+            border-color: #d1fae5; /* O "contorninho soft" */
+            transform: translateY(-1px);
         }
 
-        /* Estilo específico para o botão de Login sugerido no seu código */
-        #login button {
-            background: transparent;
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
+        /* Botão Entrar idêntico à imagem (formato pílula/cápsula) */
+        .btn-entrar {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 10px 28px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        #login button:hover {
-            background: var(--accent-color);
-            color: #000;
+        .btn-entrar:hover {
+            background-color: #bbf7d0;
+            box-shadow: 0 4px 12px rgba(22, 101, 52, 0.1);
+            transform: scale(1.03);
         }
-
-        #resultado { 
-            margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 14px;
-            display: none; text-align: center; border: 1px solid transparent;
-        }
-
-        .row { display: flex; gap: 15px; }
-        .row .campo { flex: 1; }
-
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* Estilização dos Selects no modo dark */
-        select option { background: #1a1a1a; color: #fff; }
     </style>
 </head>
-<body>
+<body class="bg-white">
 
-<button class="theme-toggle" onclick="toggleTheme()">DARK / LIGHT</button>
-
-<div class="container">
-    <h2>BSFM</h2>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'cadastro')">Cadastro</button>
-        <button class="tab-btn" onclick="switchTab(event, 'login')">Login</button>
-    </div>
-
-    <!-- SEÇÃO DE CADASTRO -->
-    <div id="cadastro" class="form-section active">
-        <div class="campo">
-            <label>Nome Completo:</label>
-            <input type="text" id="nome" placeholder="Ex: Maria Silva">
-        </div>
-        <div class="campo">
-            <label>E-mail:</label>
-            <input type="email" id="email" placeholder="maria@email.com">
-        </div>
-        <div class="campo">
-            <label>Senha:</label>
-            <input type="password" id="senha" placeholder="Crie uma senha">
-        </div>
-
-        <div class="row">
-            <div class="campo">
-                <label>Idade:</label>
-                <input type="number" id="idade">
-            </div>
-            <div class="campo">
-                <label>Sexo:</label>
-                <select id="sexo">
-                    <option value="Feminino">Feminino</option>
-                    <option value="Masculino">Masculino</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="campo">
-                <label>Peso (kg):</label>
-                <input type="number" id="peso" step="0.1" placeholder="70">
-            </div>
-            <div class="campo">
-                <label>Altura (m):</label>
-                <input type="number" id="altura" step="0.01" placeholder="1.65">
-            </div>
-        </div>
-
-        <div class="campo">
-            <label>Nível de Atividade:</label>
-            <select id="atividade">
-                <option value="Sedentario">Sedentário</option>
-                <option value="Ativo">Ativo</option>
-                <option value="Muito Ativo">Muito Ativo</option>
-            </select>
-        </div>
-        <button onclick="cadastrar()">Finalizar Cadastro</button>
-    </div>
-
-    <!-- SEÇÃO DE LOGIN -->
-    <div id="login" class="form-section">
-        <div class="campo">
-            <label>E-mail:</label>
-            <input type="email" id="login_email" placeholder="Seu e-mail">
-        </div>
-        <div class="campo">
-            <label>Senha:</label>
-            <input type="password" id="login_senha" placeholder="Sua senha">
-        </div>
-        <!-- Mantive o estilo inline mas o CSS agora trata o visual futurista -->
-        <button onclick="login()">Entrar no Painel</button>
-    </div>
-
-    <div id="resultado"></div>
-</div>
-
-<script>
-    // Função Extra para trocar tema (UI/UX)
-    function toggleTheme() {
-        document.body.classList.toggle('light-mode');
-    }
-
-    // --- SEU JAVASCRIPT ORIGINAL ABAIXO (SEM ALTERAÇÕES DE LÓGICA) ---
-    
-    const API_URL = 'https://bsfm-production.up.railway.app';
-
-    function switchTab(event, tabId) { 
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active'); 
-        event.currentTarget.classList.add('active');
-        document.getElementById('resultado').style.display = 'none';
-    }
-
-    async function cadastrar() {
-        const resDiv = document.getElementById('resultado');
-        
-        const dados = {
-            Nome: document.getElementById('nome').value,
-            Email: document.getElementById('email').value,
-            SenhaHash: document.getElementById('senha').value,
-            Idade: parseInt(document.getElementById('idade').value),
-            Peso: parseFloat(document.getElementById('peso').value),
-            Altura: parseFloat(document.getElementById('altura').value),
-            Sexo: document.getElementById('sexo').value,
-            TipoPessoa: document.getElementById('atividade').value,
-            AceitouTermos: true
-        };
-
-        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            alert("Preencha Nome, Email e Senha!");
-            return;
-        }
-
-        try {
-            const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            const data = await resp.json();
+    <!-- TOPO AJUSTADO E CENTRALIZADO -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
             
-            exibirMensagem(`✅ ${data.mensagem}<br>Faça login para continuar.`, "rgba(46, 204, 113, 0.2)", "#2ecc71");
-        } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
-        }
-    }
+            <!-- LADO ESQUERDO: LOGO -->
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-600 p-2 rounded-lg shadow-sm">
+                    <i class="fas fa-apple-whole text-white text-lg"></i>
+                </div>
+                <span class="font-bold text-xl text-emerald-800 tracking-tight">BSFM</span>
+            </div>
 
-    async function login() {
-        const dados = {
-            Email: document.getElementById('login_email').value,
-            Senha: document.getElementById('login_senha').value
-        };
+            <!-- CENTRO: MENU (Com efeito soft/contorno) -->
+            <div class="hidden md:flex items-center space-x-4">
+                <a href="#recursos" class="nav-link">Recursos</a>
+                <a href="#sobre" class="nav-link">Sobre</a>
+                <a href="#contato" class="nav-link">Contato</a>
+            </div>
 
-        try {
-            const resp = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
+            <!-- LADO DIREITO: BOTÃO ENTRAR -->
+            <div>
+                <a href="login.html" class="btn-entrar">Entrar</a>
+            </div>
 
-            if (resp.ok) {
-                const user = await resp.json();
-                localStorage.setItem('usuarioLogado', JSON.stringify(user));
-                window.location.href = 'dashboard.html'; 
-            } else {
-                exibirMensagem("⚠️ E-mail ou senha incorretos.", "rgba(241, 196, 15, 0.2)", "#f1c40f");
-            }
-        } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
-        }
-    }
+        </nav>
+    </header>
 
-    function exibirMensagem(texto, fundo, cor) {
-        const resDiv = document.getElementById('resultado');
-        resDiv.style.display = "block";
-        resDiv.style.backgroundColor = fundo;
-        resDiv.style.color = cor;
-        resDiv.style.borderColor = cor;
-        resDiv.innerHTML = texto;
-    }
-</script>
+    <main>
+        <!-- HERO SECTION (Full HD Mantida) -->
+        <section class="hero-section text-white py-32 px-6">
+            <div class="container mx-auto text-center max-w-4xl">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
+                    Nutrição inteligente e acessível: transforme sua saúde com o BSFM.
+                </h1>
+                <p class="text-xl md:text-2xl mb-10 text-gray-200">
+                    O sistema brasileiro que une tecnologia e apoio social para garantir uma alimentação equilibrada para quem mais precisa.
+                </p>
+                <div class="flex justify-center">
+                    <a href="login.html" class="bg-emerald-500 hover:bg-emerald-400 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-2xl transition transform hover:-translate-y-1">
+                        Começar Agora <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- O PROBLEMA E A SOLUÇÃO -->
+        <section class="py-20 px-6 bg-emerald-50">
+            <div class="container mx-auto max-w-5xl">
+                <div class="bg-white rounded-3xl p-10 md:p-16 shadow-xl -mt-20 relative z-10 border border-emerald-100 text-center">
+                    <h2 class="text-3xl font-bold mb-6 text-emerald-900 italic">Por que o BSFM?</h2>
+                    <p class="text-xl leading-relaxed text-gray-700">
+                        A má nutrição e os riscos de intoxicação alimentar são desafios reais em nossa comunidade. 
+                        O BSFM nasceu para combater esses problemas, oferecendo ferramentas gratuitas que educam e 
+                        guiam o usuário rumo a uma dieta essencial para a vida.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- RECURSOS DO SISTEMA -->
+        <section id="recursos" class="py-20 px-6 bg-white">
+            <div class="container mx-auto text-center">
+                <h2 class="text-4xl font-extrabold text-gray-900 mb-16 mt-2">Tecnologia a serviço da saúde</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
+                    <div class="bg-gray-50 p-8 rounded-2xl hover:bg-emerald-500 hover:text-white transition group border border-gray-200 shadow-sm">
+                        <div class="text-emerald-500 group-hover:text-white mb-6 text-4xl"><i class="fas fa-calculator"></i></div>
+                        <h3 class="font-bold text-xl mb-4 italic">Perfil Biométrico Inteligente</h3>
+                        <p class="text-sm opacity-80 leading-relaxed">Calcule sua TMB e receba sugestões personalizadas de macronutrientes com base na fórmula de Harris-Benedict.</p>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-2xl hover:bg-emerald-500 hover:text-white transition group border border-gray-200 shadow-sm">
+                        <div class="text-emerald-500 group-hover:text-white mb-6 text-4xl"><i class="fas fa-camera"></i></div>
+                        <h3 class="font-bold text-xl mb-4 italic">Reconhecimento por Foto (IA)</h3>
+                        <p class="text-sm opacity-80 leading-relaxed">Utilize nossa inteligência artificial de visão computacional para identificar alimentos em seu prato e analisar o frescor diretamente pela câmera.</p>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-2xl hover:bg-emerald-500 hover:text-white transition group border border-gray-200 shadow-sm">
+                        <div class="text-emerald-500 group-hover:text-white mb-6 text-4xl"><i class="fas fa-chart-line"></i></div>
+                        <h3 class="font-bold text-xl mb-4 italic">Diário e Metas</h3>
+                        <p class="text-sm opacity-80 leading-relaxed">Registre suas refeições diárias e acompanhe sua evolução com gráficos detalhados de ingestão hídrica, peso e massa muscular.</p>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-2xl hover:bg-emerald-500 hover:text-white transition group border border-gray-200 shadow-sm">
+                        <div class="text-emerald-500 group-hover:text-white mb-6 text-4xl"><i class="fas fa-map-location-dot"></i></div>
+                        <h3 class="font-bold text-xl mb-4 italic">Emergência e Localização</h3>
+                        <p class="text-sm opacity-80 leading-relaxed">Em caso de sintomas de intoxicação, localize rapidamente a UPA ou Hospital mais próximo através do nosso sistema de geolocalização.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ACESSIBILIDADE E INCLUSÃO -->
+        <section class="py-20 px-6 bg-gray-900 text-white relative overflow-hidden">
+             <div class="container mx-auto flex flex-col md:flex-row items-center gap-16">
+                <div class="md:w-1/2">
+                    <div class="text-6xl text-emerald-400 mb-6"><i class="fas fa-hands-asl-interpreting"></i></div>
+                    <h2 class="text-4xl font-bold mb-6 italic">Inclusão é nossa prioridade</h2>
+                    <p class="text-xl text-gray-300">
+                        O BSFM conta com um módulo exclusivo de <strong>LIBRAS</strong>, oferecendo tutoriais em vídeo sobre alimentação saudável para garantir que a comunidade surda tenha acesso pleno à informação.
+                    </p>
+                </div>
+                <div id="sobre" class="md:w-1/2 bg-gray-800 p-8 rounded-3xl border border-gray-700">
+                    <h2 class="text-3xl font-bold mb-4 italic">Sobre o BSFM</h2>
+                    <p class="text-gray-400">
+                        O <strong>BSFM (Brazilian System of Food Metric)</strong> é uma iniciativa dedicada a incentivar o consumo consciente de alimentos "in natura" e minimamente processados, reduzindo o impacto de doenças crônicas e melhorando o bem-estar físico e mental.
+                    </p>
+                </div>
+             </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer id="contato" class="bg-white border-t border-gray-200 py-16 px-6">
+        <div class="container mx-auto text-center md:text-left grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div>
+                <h4 class="font-bold text-xl mb-4 text-emerald-800">BSFM Nutri</h4>
+                <p class="text-gray-500 text-sm italic">"Nutrição baseada em dados, acessível a todos."</p>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Links Importantes</h4>
+                <div class="text-gray-600 text-sm space-y-2 flex flex-col italic">
+                    <a href="#" class="hover:text-emerald-600 transition">Política de Privacidade (LGPD)</a>
+                    <a href="#" class="hover:text-emerald-600 transition">Termos de Uso e Isenção Médica</a>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4">Contato</h4>
+                <div class="text-gray-600 text-sm mb-4">contato@bsfmnutri.org.br</div>
+                <div class="flex justify-center md:justify-start space-x-6 text-2xl text-emerald-700">
+                    <a href="#" class="hover:text-emerald-500 transition"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="hover:text-emerald-500 transition"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="hover:text-emerald-500 transition"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="text-center text-xs text-gray-400 mt-16 border-t pt-8">
+            &copy; 2024 BSFM Nutri - Todos os direitos reservados. As informações deste sistema não substituem a consulta com um nutricionista ou médico.
+        </div>
+    </footer>
 
 </body>
 </html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSFM - Portal Nutricional</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Tema Escuro (Padrão) */
+            --bg-body: #0a0b0d;
+            --bg-container: rgba(20, 25, 30, 0.8);
+            --accent-color: #00f2ff; /* Turquesa Neon */
+            --accent-glow: rgba(0, 242, 255, 0.5);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(0, 242, 255, 0.2);
+            --glass-blur: blur(12px);
+        }
+
+        /* Classe para Modo Claro */
+        .light-mode {
+            --bg-body: #f0f4f8;
+            --bg-container: rgba(255, 255, 255, 0.9);
+            --accent-color: #008b8b;
+            --accent-glow: rgba(0, 139, 139, 0.3);
+            --text-main: #2c3e50;
+            --text-dim: #7f8c8d;
+            --input-bg: #ffffff;
+            --input-border: #d1d8e0;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg-body);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 20%);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            transition: background 0.5s ease;
+        }
+
+        /* Botão de Troca de Tema */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-container);
+            border: 1px solid var(--input-border);
+            color: var(--accent-color);
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: var(--glass-blur);
+            transition: 0.3s;
+        }
+
+        .container { 
+            background: var(--bg-container); 
+            width: 90%;
+            max-width: 420px; 
+            padding: 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 2px var(--accent-color);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--input-border);
+            position: relative;
+        }
+
+        h2 { 
+            text-align: center; 
+            color: var(--accent-color); 
+            margin-bottom: 30px; 
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Abas */
+        .tabs { 
+            display: flex; 
+            margin-bottom: 30px; 
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 5px;
+        }
+        .tab-btn { 
+            flex: 1; padding: 12px; border: none; background: none; 
+            cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-dim);
+            transition: 0.4s;
+            border-radius: 8px;
+        }
+        .tab-btn.active { 
+            color: var(--bg-body); 
+            background: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .form-section { display: none; }
+        .form-section.active { display: block; animation: slideUp 0.5s ease forwards; }
+
+        .campo { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; margin-bottom: 8px; font-weight: 400; color: var(--text-dim); }
+        
+        input, select { 
+            width: 100%; padding: 12px 16px; 
+            background: var(--input-bg);
+            border: 1px solid var(--input-border); 
+            border-radius: 10px; 
+            font-size: 14px; 
+            color: var(--text-main);
+            box-sizing: border-box; 
+            transition: 0.3s;
+        }
+        input:focus { 
+            border-color: var(--accent-color); 
+            outline: none; 
+            box-shadow: 0 0 10px var(--accent-glow);
+            background: rgba(255,255,255,0.1);
+        }
+
+        button { 
+            background: var(--accent-color); 
+            color: #000; 
+            border: none; 
+            padding: 16px; 
+            width: 100%; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s; 
+            margin-top: 15px;
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 20px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        /* Estilo específico para o botão de Login sugerido no seu código */
+        #login button {
+            background: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+        #login button:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        #resultado { 
+            margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 14px;
+            display: none; text-align: center; border: 1px solid transparent;
+        }
+
+        .row { display: flex; gap: 15px; }
+        .row .campo { flex: 1; }
+
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(20px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Estilização dos Selects no modo dark */
+        select option { background: #1a1a1a; color: #fff; }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()">DARK / LIGHT</button>
+
+<div class="container">
+    <h2>BSFM</h2>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'cadastro')">Cadastro</button>
+        <button class="tab-btn" onclick="switchTab(event, 'login')">Login</button>
+    </div>
+
+    <!-- SEÇÃO DE CADASTRO -->
+    <div id="cadastro" class="form-section active">
+        <div class="campo">
+            <label>Nome Completo:</label>
+            <input type="text" id="nome" placeholder="Ex: Maria Silva">
+        </div>
+        <div class="campo">
+            <label>E-mail:</label>
+            <input type="email" id="email" placeholder="maria@email.com">
+        </div>
+        <div class="campo">
+            <label>Senha:</label>
+            <input type="password" id="senha" placeholder="Crie uma senha">
+        </div>
+
+        <div class="row">
+            <div class="campo">
+                <label>Idade:</label>
+                <input type="number" id="idade">
+            </div>
+            <div class="campo">
+                <label>Sexo:</label>
+                <select id="sexo">
+                    <option value="Feminino">Feminino</option>
+                    <option value="Masculino">Masculino</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="campo">
+                <label>Peso (kg):</label>
+                <input type="number" id="peso" step="0.1" placeholder="70">
+            </div>
+            <div class="campo">
+                <label>Altura (m):</label>
+                <input type="number" id="altura" step="0.01" placeholder="1.65">
+            </div>
+        </div>
+
+        <div class="campo">
+            <label>Nível de Atividade:</label>
+            <select id="atividade">
+                <option value="Sedentario">Sedentário</option>
+                <option value="Ativo">Ativo</option>
+                <option value="Muito Ativo">Muito Ativo</option>
+            </select>
+        </div>
+        <button onclick="cadastrar()">Finalizar Cadastro</button>
+    </div>
+
+    <!-- SEÇÃO DE LOGIN -->
+    <div id="login" class="form-section">
+        <div class="campo">
+            <label>E-mail:</label>
+            <input type="email" id="login_email" placeholder="Seu e-mail">
+        </div>
+        <div class="campo">
+            <label>Senha:</label>
+            <input type="password" id="login_senha" placeholder="Sua senha">
+        </div>
+        <!-- Mantive o estilo inline mas o CSS agora trata o visual futurista -->
+        <button onclick="login()">Entrar no Painel</button>
+    </div>
+
+    <div id="resultado"></div>
+</div>
+
+<script>
+    // Função Extra para trocar tema (UI/UX)
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+    }
+
+    // --- SEU JAVASCRIPT ORIGINAL ABAIXO (SEM ALTERAÇÕES DE LÓGICA) ---
+    
+    const API_URL = 'https://bsfm-production.up.railway.app';
+
+    function switchTab(event, tabId) { 
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active'); 
+        event.currentTarget.classList.add('active');
+        document.getElementById('resultado').style.display = 'none';
+    }
+
+    async function cadastrar() {
+        const resDiv = document.getElementById('resultado');
+        
+        const dados = {
+            Nome: document.getElementById('nome').value,
+            Email: document.getElementById('email').value,
+            SenhaHash: document.getElementById('senha').value,
+            Idade: parseInt(document.getElementById('idade').value),
+            Peso: parseFloat(document.getElementById('peso').value),
+            Altura: parseFloat(document.getElementById('altura').value),
+            Sexo: document.getElementById('sexo').value,
+            TipoPessoa: document.getElementById('atividade').value,
+            AceitouTermos: true
+        };
+
+        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
+            alert("Preencha Nome, Email e Senha!");
+            return;
+        }
+
+        try {
+            const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            const data = await resp.json();
+            
+            exibirMensagem(`✅ ${data.mensagem}<br>Faça login para continuar.`, "rgba(46, 204, 113, 0.2)", "#2ecc71");
+        } catch (err) {
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
+        }
+    }
+
+    async function login() {
+        const dados = {
+            Email: document.getElementById('login_email').value,
+            Senha: document.getElementById('login_senha').value
+        };
+
+        try {
+            const resp = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            if (resp.ok) {
+                const user = await resp.json();
+                localStorage.setItem('usuarioLogado', JSON.stringify(user));
+                window.location.href = 'dashboard.html'; 
+            } else {
+                exibirMensagem("⚠️ E-mail ou senha incorretos.", "rgba(241, 196, 15, 0.2)", "#f1c40f");
+            }
+        } catch (err) {
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
+        }
+    }
+
+    function exibirMensagem(texto, fundo, cor) {
+        const resDiv = document.getElementById('resultado');
+        resDiv.style.display = "block";
+        resDiv.style.backgroundColor = fundo;
+        resDiv.style.color = cor;
+        resDiv.style.borderColor = cor;
+        resDiv.innerHTML = texto;
+    }
+</script>
+
+</body>
+</html>

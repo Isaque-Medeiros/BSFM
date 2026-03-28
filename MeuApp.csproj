@@ -8,6 +8,9 @@
   <Content Include="dashboard.html">
     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
   </Content>
+  <Content Include="login.html">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </Content>
 </ItemGroup>
 
   <PropertyGroup>
