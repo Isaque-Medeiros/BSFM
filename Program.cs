@@ -27,16 +27,26 @@ builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
 
-app.UseDefaultFiles(); // Procura index.html na raiz
+// --- SOLUÇÃO PARA O ERRO DO WWWROOT ---
+// Isso força o servidor a olhar para a raiz, já que você não tem a pasta wwwroot
+app.UseDefaultFiles(); 
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
-        System.IO.Path.Combine(app.Environment.ContentRootPath)),
+        app.Environment.ContentRootPath),
     RequestPath = ""
 });
-app.UseStaticFiles();  // Permite servir dashboard.html, CSS, etc.
 
 app.UseCors("PermitirSite");
+
+// Rota raiz explicitamente entregando o index.html da raiz
+app.MapGet("/", async (context) => 
+{
+    var path = Path.Combine(app.Environment.ContentRootPath, "index.html");
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(path);
+});
+
 
 // 3. DATABASE (Igual ao seu anterior)
 try {
