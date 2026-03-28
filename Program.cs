@@ -47,6 +47,13 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     usuarioVindoDoJs.Email = email;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
+
+    string tokenGerado = new Random().Next(100000, 999999).ToString();
+    usuarioVindoDoJs.TokenVerificacao = tokenGerado;
+    usuarioVindoDoJs.EmailVerificado = false;
+
+    // ENVIA O E-MAIL
+    EmailService.EnviarToken(usuarioVindoDoJs.Email, tokenGerado);
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();

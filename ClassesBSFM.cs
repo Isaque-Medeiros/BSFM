@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using MailKit.Net.Smtp;
+using MimeKit;
 
 namespace ClassesBSFM
 {
@@ -12,6 +14,10 @@ namespace ClassesBSFM
         public string Nome { get; set; } = string.Empty;
         public int Idade { get; set; }
         public string Email { get; set; } = string.Empty;
+
+        public string? TokenVerificacao { get; set; }
+        public bool EmailVerificado { get; set; } = false;
+
         public string SenhaHash { get; set; } = string.Empty; // OK: Combina com Engrenagem e Program
         public bool AceitouTermos { get; set; }
         public DateTime DataAceite { get; set; }
@@ -117,5 +123,25 @@ namespace ClassesBSFM
         public string NomeHospital { get; set; } = string.Empty;
         public string Endereço { get; set; } = string.Empty;
         public string Telefone { get; set; } = string.Empty;
+    }
+
+    public class EmailService {
+    public static void EnviarToken(string emailDestino, string token) {
+        var mensagem = new MimeMessage();
+        mensagem.From.Add(new MailboxAddress("Portal BSFM", "seu-email@gmail.com"));
+        mensagem.To.Add(new MailboxAddress("", emailDestino));
+        mensagem.Subject = "Seu Código de Acesso BSFM";
+
+        mensagem.Body = new TextPart("html") {
+            Text = $"<h1>Bem-vindo ao BSFM!</h1><p>Para continuar com o login insira o seu código de verificação</p><p>Seu código de verificação é: <b>{token}</b></p>"
+        };
+
+        using var client = new SmtpClient();
+        // Conecta ao servidor (Exemplo Mailtrap ou Gmail)
+        client.Connect("sandbox.smtp.mailtrap.io", 587, false); 
+        client.Authenticate("usuario-smtp", "senha-smtp");
+        client.Send(mensagem);
+        client.Disconnect(true);
+        }
     }
 }

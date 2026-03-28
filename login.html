@@ -13,7 +13,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
 
-        /* Fundo suave com a imagem da landing page */
         .bg-login {
             background: linear-gradient(rgba(240, 253, 244, 0.8), rgba(209, 250, 229, 0.9)), 
                         url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=1920');
@@ -22,14 +21,12 @@
             background-attachment: fixed;
         }
 
-        /* Card estilo Soft/Glass */
         .soft-card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 2.5rem;
             box-shadow: 0 25px 50px -12px rgba(6, 78, 59, 0.15);
         }
 
-        /* Estilo dos Inputs */
         .soft-input {
             width: 100%;
             background-color: #f3f4f6;
@@ -59,7 +56,6 @@
             margin-left: 0.5rem;
         }
 
-        /* Classes para as Abas (Tabs) */
         .tab-btn {
             @apply flex-1 py-3 text-sm rounded-xl transition-all duration-300 font-medium;
         }
@@ -80,6 +76,15 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Estilo especial para o Input de Token */
+        .token-input {
+            letter-spacing: 1rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding-left: 2rem;
+        }
     </style>
 </head>
 <body class="bg-login min-h-screen flex items-center justify-center p-6">
@@ -96,7 +101,7 @@
     </div>
 
     <!-- Navegação de Abas -->
-    <div class="flex bg-gray-100 rounded-2xl p-1.5 mb-8">
+    <div id="nav-tabs" class="flex bg-gray-100 rounded-2xl p-1.5 mb-8">
         <button onclick="switchTab(event, 'cadastro')" id="btn-cadastro" class="tab-btn tab-active">Criar Conta</button>
         <button onclick="switchTab(event, 'login')" id="btn-login" class="tab-btn tab-inactive">Entrar</button>
     </div>
@@ -157,6 +162,30 @@
         </div>
     </div>
 
+    <!-- SEÇÃO DE VERIFICAÇÃO DE TOKEN (Adicionada) -->
+    <div id="verificacao-token" class="form-section">
+        <div class="text-center mb-6">
+            <i class="fas fa-envelope-open-text text-emerald-500 text-5xl mb-4"></i>
+            <h3 class="text-lg font-bold text-gray-800">Verifique seu E-mail</h3>
+            <p class="text-sm text-gray-500">Enviamos um código de 6 dígitos para o e-mail cadastrado.</p>
+        </div>
+        
+        <div class="space-y-6">
+            <div>
+                <label class="label-style text-center">Digite o Código</label>
+                <input type="text" id="token_input" class="soft-input token-input" maxlength="6" placeholder="000000">
+            </div>
+
+            <button onclick="verificarToken()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95">
+                Verificar e Ativar Conta <i class="fas fa-shield-alt ml-2"></i>
+            </button>
+
+            <button onclick="switchTab(event, 'cadastro')" class="w-full text-gray-400 text-sm hover:text-gray-600 transition">
+                Usar outro e-mail
+            </button>
+        </div>
+    </div>
+
     <!-- FORMULÁRIO DE LOGIN -->
     <div id="login" class="form-section">
         <div class="flex flex-col gap-6">
@@ -187,47 +216,47 @@
 
 </div>
 
-<!-- JAVASCRIPT PRESERVADO E INTEGRADO -->
 <script>
- const API_URL = 'https://bsfm-production.up.railway.app';
+    const API_URL = 'https://bsfm-production.up.railway.app';
+    let emailRegistrado = ""; // Variável global para saber qual email verificar
 
     function switchTab(event, tabId) { 
-        // 1. Esconde todas as seções
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        // 2. Mostra a seção selecionada
         document.getElementById(tabId).classList.add('active'); 
 
-        // 3. Atualiza o visual dos botões de aba (Usando as classes certas do seu novo CSS)
+        // Mostra abas de volta se estava na verificação
+        document.getElementById('nav-tabs').classList.remove('hidden');
+
         document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
             btn.classList.remove('tab-active');
             btn.classList.add('text-gray-500');
         });
         
-        event.currentTarget.classList.add('tab-active');
-        event.currentTarget.classList.remove('text-gray-500');
+        if(event && event.currentTarget) {
+            event.currentTarget.classList.add('tab-active');
+            event.currentTarget.classList.remove('text-gray-500');
+        }
 
         document.getElementById('resultado').style.display = 'none';
         document.getElementById('resultado').classList.add('hidden');
     }
-    // FORÇA A APARIÇÃO DA MENSAGEM
+
     function exibirMensagem(texto, fundo, cor, borda) {
         const resDiv = document.getElementById('resultado');
         if (!resDiv) return;
-
         resDiv.innerHTML = texto;
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
         resDiv.style.borderColor = borda;
-        
-        // Tira o 'hidden' do Tailwind e força o display
         resDiv.classList.remove('hidden');
         resDiv.style.display = "block";
     }
 
     async function cadastrar() {
+        const emailInput = document.getElementById('email').value;
         const dados = {
             Nome: document.getElementById('nome').value,
-            Email: document.getElementById('email').value,
+            Email: emailInput,
             SenhaHash: document.getElementById('senha').value,
             Idade: parseInt(document.getElementById('idade').value) || 0,
             Peso: parseFloat(document.getElementById('peso').value) || 0,
@@ -252,45 +281,80 @@
             const data = await resp.json();
 
             if (resp.ok) {
+                emailRegistrado = emailInput; // Guarda para usar na verificação
                 exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
-                // Limpa os campos
-                document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
+                
+                // Redireciona para a tela de Token em 1.5s
+                setTimeout(() => {
+                    document.getElementById('nav-tabs').classList.add('hidden');
+                    switchTab(null, 'verificacao-token');
+                }, 1500);
+
             } else {
-                // Se cair aqui (Status 400), o email já existe
                 exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
             }
         } catch (err) {
-            exibirMensagem("❌ Erro: O servidor está reiniciando, tente em instantes.", "#fef2f2", "#991b1b", "#fee2e2");
-    }
-}
-
-async function login() {
-    const dados = {
-        Email: document.getElementById('login_email').value,
-        Senha: document.getElementById('login_senha').value
-    };
-
-    try {
-        const resp = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        });
-
-        const data = await resp.json(); // Defina a variável ANTES de usar
-
-        if (resp.ok) {
-            // Login com sucesso, salva e vai para o dashboard
-            localStorage.setItem('usuarioLogado', JSON.stringify(data));
-            window.location.href = 'dashboard.html'; 
-        } else {
-            // Mostra a mensagem de erro que vem do back-end
-            exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+            exibirMensagem("❌ Servidor indisponível no momento.", "#fef2f2", "#991b1b", "#fee2e2");
         }
-    } catch (err) {
-        exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
     }
-}
+
+    // NOVA FUNÇÃO: VERIFICAR TOKEN
+    async function verificarToken() {
+        const token = document.getElementById('token_input').value;
+
+        if (token.length < 6) {
+            exibirMensagem("⚠️ O código deve ter 6 dígitos.", "#fffbeb", "#92400e", "#fef3c7");
+            return;
+        }
+
+        try {
+            const resp = await fetch(`${API_URL}/verificar-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Email: emailRegistrado, Token: token })
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok) {
+                exibirMensagem(`✅ Sucesso! ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
+                setTimeout(() => {
+                    switchTab(null, 'login'); // Manda para o Login após verificar
+                    document.getElementById('btn-login').click();
+                }, 2000);
+            } else {
+                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+            }
+        } catch (err) {
+            exibirMensagem("❌ Erro ao validar código.", "#fef2f2", "#991b1b", "#fee2e2");
+        }
+    }
+
+    async function login() {
+        const dados = {
+            Email: document.getElementById('login_email').value,
+            Senha: document.getElementById('login_senha').value
+        };
+
+        try {
+            const resp = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const data = await resp.json();
+
+            if (resp.ok) {
+                localStorage.setItem('usuarioLogado', JSON.stringify(data));
+                window.location.href = 'dashboard.html'; 
+            } else {
+                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+            }
+        } catch (err) {
+            exibirMensagem("❌ Erro de conexão.", "#fef2f2", "#991b1b", "#fee2e2");
+        }
+    }
 </script>
 
 </body>
