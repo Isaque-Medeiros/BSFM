@@ -257,12 +257,13 @@
             });
 
             if (resp.ok) {
-                const user = await resp.json();
-                // O C# devolve em letras minúsculas no JSON por padrão (camelCase)
-                localStorage.setItem('usuarioLogado', JSON.stringify(user));
-                window.location.href = 'dashboard.html'; 
+                // SUCESSO (Status 200)
+                exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
+                // Limpa o formulário opcionalmente
+                document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
             } else {
-                exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fffbeb", "#92400e", "#fef3c7");
+                // ERRO DO SERVIDOR (Status 400 - E-mail repetido, etc)
+                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
             }
         } catch (err) {
             exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");

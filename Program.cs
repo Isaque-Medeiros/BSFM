@@ -79,14 +79,27 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
     
-    // Processa senha e cálculos
+    // 1. LIMPEZA E PADRONIZAÇÃO: Remove espaços e coloca em minúsculo
+    string emailTratado = usuarioVindoDoJs.Email.Trim().ToLower();
+
+    // 2. VERIFICAÇÃO: Checa se já existe algum usuário com este e-mail
+    bool jaExiste = db.Usuarios.Any(u => u.Email.ToLower() == emailTratado);
+
+    if (jaExiste)
+    {
+        // Retorna um erro 400 (Bad Request) com uma mensagem clara
+        return Results.Json(new { mensagem = "Este e-mail já está cadastrado em nossa base." }, statusCode: 400);
+    }
+
+    // 3. SE NÃO EXISTIR, SEGUE O PROCESSO NORMAL:
+    usuarioVindoDoJs.Email = emailTratado; // Salva o e-mail já limpo
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
     
-    return Results.Ok(new { mensagem = "Sucesso!", id = usuarioVindoDoJs.ID });
+    return Results.Ok(new { mensagem = "Conta criada com sucesso!" });
 });
 
 // 8. ROTA DE LOGIN
