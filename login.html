@@ -209,25 +209,21 @@
         document.getElementById('resultado').style.display = 'none';
         document.getElementById('resultado').classList.add('hidden');
     }
-    // Substitua sua função exibirMensagem por esta:
+    // FORÇA A APARIÇÃO DA MENSAGEM
     function exibirMensagem(texto, fundo, cor, borda) {
         const resDiv = document.getElementById('resultado');
         if (!resDiv) return;
 
-        // Remove a classe hidden (que esconde via CSS) e mostra o bloco
-        resDiv.classList.remove('hidden');
-        resDiv.style.display = "block";
-        
-        // Aplica as cores passadas
+        resDiv.innerHTML = texto;
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
         resDiv.style.borderColor = borda;
         
-        // Insere o texto recebido do back-end
-        resDiv.innerHTML = texto;
+        // Tira o 'hidden' do Tailwind e força o display
+        resDiv.classList.remove('hidden');
+        resDiv.style.display = "block";
     }
 
-    // Substitua sua função cadastrar por esta (Garante a ordem certa):
     async function cadastrar() {
         const dados = {
             Nome: document.getElementById('nome').value,
@@ -242,7 +238,7 @@
         };
 
         if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
+            exibirMensagem("⚠️ Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
@@ -253,27 +249,20 @@
                 body: JSON.stringify(dados)
             });
             
-            // Aqui está o ponto crucial: se o servidor demorar ou falhar, precisamos esperar o JSON
             const data = await resp.json();
 
             if (resp.ok) {
-                // SUCESSO: O status é 200 (Mostra o fundo verde)
-                // Aqui usamos data.mensagem que definimos no C#
                 exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
-                
-                // Limpa o form após sucesso
-                setTimeout(() => {
-                    document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
-                }, 3000);
+                // Limpa os campos
+                document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
             } else {
-                // ERRO (E-mail repetido ou erro do servidor): Mostra o fundo laranja/vermelho
-                exibirMensagem(`⚠️ ${data.mensagem || "Não foi possível cadastrar."}`, "#fffbeb", "#92400e", "#fef3c7");
+                // Se cair aqui (Status 400), o email já existe
+                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
             }
         } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
-            console.error("Erro no Fetch:", err);
-        }
+            exibirMensagem("❌ Erro: O servidor está reiniciando, tente em instantes.", "#fef2f2", "#991b1b", "#fee2e2");
     }
+}
 
 async function login() {
     const dados = {
