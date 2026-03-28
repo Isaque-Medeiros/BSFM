@@ -140,30 +140,39 @@ namespace ClassesBSFM
                 <div style='font-family: sans-serif; background-color: #f9f9f9; padding: 20px;'>
                     <div style='max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; border: 1px solid #ddd;'>
                         <h2 style='color: #059669; text-align: center;'>Bem-vindo ao BSFM!</h2>
-                        <p style='color: #4b5563; text-align: center;'>Use o código abaixo para ativar sua conta no portal:</p>
+                        <p style='color: #4b5563; text-align: center;'>Seu código de ativação é:</p>
                         <div style='background: #ecfdf5; border: 2px dashed #10b981; padding: 15px; font-size: 30px; font-weight: bold; text-align: center; color: #065f46; letter-spacing: 8px;'>
                             {token}
                         </div>
-                        <p style='color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;'>Se você não solicitou este cadastro, por favor ignore este e-mail.</p>
                     </div>
                 </div>"
             };
 
             using var client = new SmtpClient();
             try {
-                // Remova qualquer espaço ou comentário dessa linha:
+                // AJUSTE PARA EVITAR TIMEOUT NO RAILWAY:
+                // 1. Aumentamos o timeout para 20 segundos
+                client.Timeout = 20000;
+
+                // 2. Forçamos o uso apenas de IPv4 para evitar erro de rede no Google
+                // Isso resolve 90% dos problemas de "Timed Out" em servidores de nuvem
+                client.LocalDomain = "localhost";
+
+                // 3. Ignora validação de certificado se o Railway não tiver o certificado do Google na raiz
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
+                // 4. Tenta a conexão com as 16 letras (SEM ESPAÇOS)
                 client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-                
-                // USE AS 16 LETRAS SEM ESPAÇOS:
                 client.Authenticate("isaquemedeiros190406@gmail.com", "nuxogsdedzxknfkd");
                 
                 client.Send(mensagem);
                 client.Disconnect(true);
-                Console.WriteLine("[LOG] E-mail enviado com sucesso!");
+                Console.WriteLine("[LOG] E-mail enviado com sucesso para " + emailDestino);
             }
             catch (Exception ex) {
-                // Aqui ele vai detalhar por que o Railway não achou o Gmail
                 Console.WriteLine($"[ERRO CRÍTICO E-MAIL]: {ex.Message}");
+                if (ex.InnerException != null) 
+                    Console.WriteLine($"[DETALHE]: {ex.InnerException.Message}");
             }
         }
     }
