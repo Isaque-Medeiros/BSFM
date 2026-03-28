@@ -53,10 +53,11 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     usuarioVindoDoJs.EmailVerificado = false;
 
     // ENVIA O E-MAIL
-    EmailService.EnviarToken(usuarioVindoDoJs.Email, tokenGerado);
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
+    
+    Task.Run(() => EmailService.EnviarToken(usuarioVindoDoJs.Email, tokenGerado));
     return Results.Ok(new { mensagem = "Conta criada com sucesso!" });
 });
 

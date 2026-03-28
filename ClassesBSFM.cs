@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MailKit.Net.Smtp;
 using MimeKit;
+using MailKit.Security; // IMPORTANTE: Certifique-se de ter este using
 
 namespace ClassesBSFM
 {
@@ -125,23 +126,41 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    public class EmailService {
-    public static void EnviarToken(string emailDestino, string token) {
-        var mensagem = new MimeMessage();
-        mensagem.From.Add(new MailboxAddress("Portal BSFM", "seu-email@gmail.com"));
-        mensagem.To.Add(new MailboxAddress("", emailDestino));
-        mensagem.Subject = "Seu Código de Acesso BSFM";
+    public class EmailService 
+    {
+        public static void EnviarToken(string emailDestino, string token) 
+        {
+            var mensagem = new MimeMessage();
+            mensagem.From.Add(new MailboxAddress("Portal BSFM", "seu-email@gmail.com"));
+            mensagem.To.Add(new MailboxAddress("", emailDestino));
+            mensagem.Subject = "Seu Código de Acesso BSFM";
 
-        mensagem.Body = new TextPart("html") {
-            Text = $"<h1>Bem-vindo ao BSFM!</h1><p>Para continuar com o login insira o seu código de verificação</p><p>Seu código de verificação é: <b>{token}</b></p>"
-        };
+            mensagem.Body = new TextPart("html") {
+                Text = $"<h1>Bem-vindo ao BSFM!</h1><p>Seu código de verificação é: <b>{token}</b></p>"
+            };
 
-        using var client = new SmtpClient();
-        // Conecta ao servidor (Exemplo Mailtrap ou Gmail)
-        client.Connect("sandbox.smtp.mailtrap.io", 587, false); 
-        client.Authenticate("usuario-smtp", "senha-smtp");
-        client.Send(mensagem);
-        client.Disconnect(true);
+            using (var client = new SmtpClient()) 
+            {
+                try {
+                    // Se estiver usando MAILTRAP: sandbox.smtp.mailtrap.io na porta 587 ou 2525
+                    // Se estiver usando GMAIL: smtp.gmail.com na porta 587
+                    
+                    // timeout de 10 segundos para não travar o app se o e-mail falhar
+                    client.Timeout = 10000; 
+                    
+                    // mude os parâmetros abaixo para os seus reais
+                    client.Connect("seu.servidor.smtp", 587, SecureSocketOptions.StartTls); 
+                    client.Authenticate("usuario-aqui", "senha-aqui");
+                    
+                    client.Send(mensagem);
+                    client.Disconnect(true);
+                }
+                catch (Exception ex) {
+                    // Log de erro no console para você ver no Railway
+                    Console.WriteLine($"[ERRO E-MAIL]: {ex.Message}");
+                    // Não damos 'throw' aqui para o cadastro não travar se o e-mail falhar
+                }
+            }
         }
     }
 }
