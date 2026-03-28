@@ -4,21 +4,20 @@ using Microsoft.EntityFrameworkCore;
 using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
-using System.Net;
 
-// 1. DATA FIX
+// 1. DATA FIX para o PostgreSQL do Railway
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 2. PORTA DIRETA DO AMBIENTE (Forma mais estável para Nixpacks/Railway)
+// 2. Configuração de Porta Dinâmica do Railway
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.ConfigureKestrel(options =>
 {
-    // Ouvir em todas as interfaces na porta fornecida pela nuvem
     options.ListenAnyIP(int.Parse(port));
 });
 
+// Serviços
 builder.Services.AddCors(options => {
     options.AddPolicy("PermitirSite", policy => 
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
@@ -27,8 +26,7 @@ builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
 
-// --- SOLUÇÃO PARA O ERRO DO WWWROOT ---
-// Isso força o servidor a olhar para a raiz, já que você não tem a pasta wwwroot
+// 3. Configuração de Arquivos Estáticos (Como os seus HTMLs estão na RAIZ)
 app.UseDefaultFiles(); 
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -39,16 +37,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseCors("PermitirSite");
 
-// Rota raiz explicitamente entregando o index.html da raiz
-app.MapGet("/", async (context) => 
-{
-    var path = Path.Combine(app.Environment.ContentRootPath, "index.html");
-    context.Response.ContentType = "text/html";
-    await context.Response.SendFileAsync(path);
-});
-
-
-// 3. DATABASE (Igual ao seu anterior)
+// 4. BANCO DE DADOS (Verificação Inicial)
 try {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
@@ -58,41 +47,32 @@ try {
     Console.WriteLine($"[AVISO BANCO]: {ex.Message}");
 }
 
-// 4. MONITORAMENTO E ROTA RAIZ
+// 5. ROTA RAIZ (UNIFICADA - Entrega o index.html e serve de Health Check)
 app.MapGet("/", async (context) => 
 {
-    Console.WriteLine($"[LOG] Health Check Recebido de: {context.Connection.RemoteIpAddress}");
-    
-    // Caminho prioritário na publicação .NET
-    string path = Path.Combine(AppContext.BaseDirectory, "index.html");
-    if (!File.Exists(path)) path = "index.html";
-
+    string path = Path.Combine(app.Environment.ContentRootPath, "index.html");
     if (File.Exists(path)) {
-        await context.Response.WriteAsync(File.ReadAllText(path));
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(path);
     } else {
-        await context.Response.WriteAsync("<h1>BSFM ONLINE</h1><p>Aguardando primeiro cadastro.</p>");
+        await context.Response.WriteAsync("<h1>BSFM ONLINE</h1><p>Servidor ativo, index.html não encontrado na raiz.</p>");
     }
 });
 
-// 7. ROTA DE CADASTRO
+// 6. ROTA DE CADASTRO (Com verificação de E-mail)
 app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
     
-    // 1. LIMPEZA E PADRONIZAÇÃO: Remove espaços e coloca em minúsculo
     string emailTratado = usuarioVindoDoJs.Email.Trim().ToLower();
 
-    // 2. VERIFICAÇÃO: Checa se já existe algum usuário com este e-mail
+    // Bloqueia e-mail duplicado
     bool jaExiste = db.Usuarios.Any(u => u.Email.ToLower() == emailTratado);
-
-    if (jaExiste)
-    {
-        // Retorna um erro 400 (Bad Request) com uma mensagem clara
-        return Results.Json(new { mensagem = "Este e-mail já está cadastrado em nossa base." }, statusCode: 400);
+    if (jaExiste) {
+        return Results.Json(new { mensagem = "Este e-mail já está cadastrado!" }, statusCode: 400);
     }
 
-    // 3. SE NÃO EXISTIR, SEGUE O PROCESSO NORMAL:
-    usuarioVindoDoJs.Email = emailTratado; // Salva o e-mail já limpo
+    usuarioVindoDoJs.Email = emailTratado;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
     
@@ -102,16 +82,14 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     return Results.Ok(new { mensagem = "Conta criada com sucesso!" });
 });
 
-// 8. ROTA DE LOGIN
+// 7. ROTA DE LOGIN
 app.MapPost("/login", (LoginDTO dadosLogin) => {
-    using var scope = app.Services.CreateScope(); // MANTIDO: Essencial para estabilidade
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
 
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
     
-    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
-    {
-        // Retornamos um pacote completo de informações para o Front-end
+    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash)) {
         return Results.Ok(new { 
             nome = user.Nome, 
             imc = user.IMC,
@@ -122,14 +100,6 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
     }
     
     return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
-});
-
-// 9. ROTA DE DEBUG (Para ver se os usuários estão lá)
-app.MapGet("/debug-usuarios", () => 
-{
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-    return Results.Ok(db.Usuarios.ToList());
 });
 
 app.Run();
