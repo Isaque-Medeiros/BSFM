@@ -131,7 +131,7 @@ namespace ClassesBSFM
         public static void EnviarToken(string emailDestino, string token) 
         {
             var mensagem = new MimeMessage();
-            mensagem.From.Add(new MailboxAddress("Portal BSFM", "seu-email@gmail.com"));
+            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
             mensagem.To.Add(new MailboxAddress("", emailDestino));
             mensagem.Subject = "Seu Código de Acesso BSFM";
 
