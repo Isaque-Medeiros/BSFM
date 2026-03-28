@@ -131,35 +131,37 @@ namespace ClassesBSFM
         public static void EnviarToken(string emailDestino, string token) 
         {
             var mensagem = new MimeMessage();
-            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
+            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com")); // Seu e-mail de envio
             mensagem.To.Add(new MailboxAddress("", emailDestino));
-            mensagem.Subject = "Seu Código de Acesso BSFM";
+            mensagem.Subject = "Código de Ativação BSFM";
 
             mensagem.Body = new TextPart("html") {
-                Text = $"<h1>Bem-vindo ao BSFM!</h1><p>Seu código de verificação é: <b>{token}</b></p>"
+                Text = $@"
+                    <div style='font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>
+                        <h2 style='color: #059669;'>Bem-vindo ao BSFM!</h2>
+                        <p>Falta pouco para ativar sua conta. Use o código abaixo:</p>
+                        <div style='background: #f3f4f6; padding: 10px; font-size: 24px; font-weight: bold; text-align: center; border-radius: 5px; letter-spacing: 5px;'>
+                            {token}
+                        </div>
+                        <p style='color: #6b7280; font-size: 12px; margin-top: 20px;'>Se você não solicitou este código, ignore este e-mail.</p>
+                    </div>"
             };
 
-            using (var client = new SmtpClient()) 
-            {
-                try {
-                    // Se estiver usando MAILTRAP: sandbox.smtp.mailtrap.io na porta 587 ou 2525
-                    // Se estiver usando GMAIL: smtp.gmail.com na porta 587
-                    
-                    // timeout de 10 segundos para não travar o app se o e-mail falhar
-                    client.Timeout = 10000; 
-                    
-                    // mude os parâmetros abaixo para os seus reais
-                    client.Connect("seu.servidor.smtp", 587, SecureSocketOptions.StartTls); 
-                    client.Authenticate("usuario-aqui", "senha-aqui");
-                    
-                    client.Send(mensagem);
-                    client.Disconnect(true);
-                }
-                catch (Exception ex) {
-                    // Log de erro no console para você ver no Railway
-                    Console.WriteLine($"[ERRO E-MAIL]: {ex.Message}");
-                    // Não damos 'throw' aqui para o cadastro não travar se o e-mail falhar
-                }
+            using var client = new SmtpClient();
+            try {
+                // Buscando dados das variáveis de ambiente do Railway
+                var host = "smtp.gmail.com"; // Ou sandbox.smtp.mailtrap.io
+                var port = 587;
+                var user = "isaquemedeiros190406@gmail.com"; 
+                var pass = "nuxo gsde dzxk nfkd"; // Veja a nota abaixo!
+
+                client.Connect(host, port, SecureSocketOptions.StartTls);
+                client.Authenticate(user, pass);
+                client.Send(mensagem);
+                client.Disconnect(true);
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"[ERRO FATAL E-MAIL]: {ex.Message}");
             }
         }
     }

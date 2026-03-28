@@ -29,7 +29,6 @@ app.UseStaticFiles();
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
 
-    db.Database.EnsureDeleted();
     db.Database.EnsureCreated();
 }
 
@@ -46,31 +45,52 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     if (db.Usuarios.Any(u => u.Email.ToLower() == email))
         return Results.Json(new { mensagem = "Este e-mail já existe!" }, statusCode: 400);
 
-    usuarioVindoDoJs.Email = email;
+    // Gerar Token e salvar usuário desativado
+    string token = new Random().Next(100000, 999999).ToString();
+    usuarioVindoDoJs.TokenVerificacao = token;
+    usuarioVindoDoJs.EmailVerificado = false; // IMPORTANTE: Bloqueado
+    
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
-
-    string tokenGerado = new Random().Next(100000, 999999).ToString();
-    usuarioVindoDoJs.TokenVerificacao = tokenGerado;
-    usuarioVindoDoJs.EmailVerificado = false;
-
-    // ENVIA O E-MAIL
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
 
-    Task.Run(() => EmailService.EnviarToken(usuarioVindoDoJs.Email, tokenGerado));
-    return Results.Ok(new { mensagem = "Conta criada com sucesso!" });
+    // Enviar e-mail em paralelo
+    Task.Run(() => EmailService.EnviarToken(email, token));
+
+    return Results.Ok(new { mensagem = "Cadastro pré-realizado! Verifique seu e-mail." });
 });
 
-// LOGIN
+// --- NOVA ROTA: VERIFICAR TOKEN ---
+app.MapPost("/verificar-token", (TokenRequest req) => {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower() && u.TokenVerificacao == req.Token);
+
+    if (user == null)
+        return Results.Json(new { mensagem = "Código incorreto ou expirado." }, statusCode: 400);
+
+    user.EmailVerificado = true; // ATIVA A CONTA
+    user.TokenVerificacao = null; // Limpa o token por segurança
+    db.SaveChanges();
+
+    return Results.Ok(new { mensagem = "Conta ativada com sucesso!" });
+});
+
+// --- ROTA DE LOGIN (Atualizada para checar se está verificado) ---
 app.MapPost("/login", (LoginDTO dadosLogin) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
     
-    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
-        return Results.Ok(new { nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal, objetivo = user.TipoPessoa });
+    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash)) {
+        if (!user.EmailVerificado)
+            return Results.Json(new { mensagem = "Aguardando confirmação de e-mail." }, statusCode: 401);
+
+        return Results.Ok(new { nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal });
+    }
     
     return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
 });
@@ -78,3 +98,4 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
 app.Run();
 
 public record LoginDTO(string Email, string Senha);
+public record TokenRequest(string Email, string Token);
