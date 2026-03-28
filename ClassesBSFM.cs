@@ -152,7 +152,7 @@ namespace ClassesBSFM
             try {
                 // AJUSTE PARA EVITAR TIMEOUT NO RAILWAY:
                 // 1. Aumentamos o timeout para 20 segundos
-                client.Timeout = 20000;
+                client.Timeout = 30000;
 
                 // 2. Forçamos o uso apenas de IPv4 para evitar erro de rede no Google
                 // Isso resolve 90% dos problemas de "Timed Out" em servidores de nuvem
@@ -162,7 +162,7 @@ namespace ClassesBSFM
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 // 4. Tenta a conexão com as 16 letras (SEM ESPAÇOS)
-                client.Connect("smtp.gmail.com", 465, SecureSocketOptions.StartTls);
+                client.Connect("smtp.gmail.com", 465, SecureSocketOptions.SslOnConnect);
                 client.Authenticate("isaquemedeiros190406@gmail.com", "nuxogsdedzxknfkd");
                 
                 client.Send(mensagem);
