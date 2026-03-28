@@ -9,7 +9,6 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
-// PEGA A PORTA DO RAILWAY DE FORMA LIMPA
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
@@ -28,79 +27,64 @@ app.UseStaticFiles();
 // DATABASE
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
     db.Database.EnsureCreated();
 }
 
-// ROTA RAIZ SEGURA
 app.MapGet("/", (IWebHostEnvironment env) => 
     Results.File(Path.Combine(env.ContentRootPath, "index.html"), "text/html"));
 
-// ROTA DE CADASTRO
-app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
+// --- ROTA 1: APENAS ENVIA O CÓDIGO (NÃO SALVA NO BANCO) ---
+// O Front-end chama isso quando o usuário clica em "Cadastrar"
+app.MapPost("/solicitar-codigo", (SolicitacaoEmail req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-    
-    var email = usuarioVindoDoJs.Email?.Trim().ToLower();
-    
-    // Se o banco demorar para responder o ANY, o Railway pode dar timeout.
-    // Usamos o AsNoTracking para consulta rápida
-    if (db.Usuarios.AsNoTracking().Any(u => u.Email.ToLower() == email))
-        return Results.Json(new { mensagem = "Este e-mail já possui conta!" }, statusCode: 400);
 
+    var email = req.Email.Trim().ToLower();
+    
+    // Verifica se esse usuário já existe no banco antes de mandar e-mail
+    if (db.Usuarios.AsNoTracking().Any(u => u.Email.ToLower() == email))
+        return Results.Json(new { mensagem = "Este e-mail já possui uma conta!" }, statusCode: 400);
+
+    // Gera o código
     string token = new Random().Next(100000, 999999).ToString();
     
-    usuarioVindoDoJs.TokenVerificacao = token;
-    usuarioVindoDoJs.EmailVerificado = false; 
-    usuarioVindoDoJs.Email = email;
-    usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
-    
-    new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
-    
-    db.Usuarios.Add(usuarioVindoDoJs);
-    db.SaveChanges(); // Persiste no banco primeiro
+    // Dispara o email via API Mailtrap que configuramos
+    EmailService.EnviarToken(email, token);
 
-    // ENVIO SEGURO (Dispara e já libera o frontend, sem travar na conexão com o Mailtrap)
-    EmailService.EnviarToken(email ?? "", token);
-
-    return Results.Ok(new { mensagem = "Tudo certo! Verifique seu Mailtrap para ativar." });
+    // Retornamos o token para o seu JS poder conferir se o que o usuário digitou está certo
+    return Results.Ok(new { mensagem = "Código enviado!", codigoParaValidar = token });
 });
 
-// NOVA ROTA: ATIVAR CONTA VIA TOKEN
-app.MapPost("/verificar-token", (TokenRequest req) => {
+// --- ROTA 2: FINALMENTE CRIA O USUÁRIO NO BANCO ---
+// O Front-end só chama isso quando o usuário digita o token certo no site
+app.MapPost("/cadastrar-usuario-final", (Usuario usuarioVindoDoJs) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
 
-    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
+    var email = usuarioVindoDoJs.Email?.Trim().ToLower();
 
-    if (user != null && user.TokenVerificacao == req.Token) {
-        user.EmailVerificado = true; // CONTA ATIVA!
-        user.TokenVerificacao = null; 
-        db.SaveChanges();
-        return Results.Ok(new { mensagem = "Sua conta foi ativada com sucesso! Faça login." });
-    }
+    // Proteção de última hora (BCrypt e Cálculos Nutricionais)
+    usuarioVindoDoJs.Email = email;
+    usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
+    usuarioVindoDoJs.EmailVerificado = true; // Ele já confirmou o token no site
     
-    return Results.Json(new { mensagem = "Código de ativação inválido." }, statusCode: 400);
+    new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
+
+    db.Usuarios.Add(usuarioVindoDoJs);
+    db.SaveChanges();
+
+    return Results.Ok(new { mensagem = "Perfil criado com sucesso!" });
 });
 
+// --- ROTA DE LOGIN (MANTIDA) ---
 app.MapPost("/login", (LoginDTO dadosLogin) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
 
-    // 1. Busca o usuário pelo e-mail
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
     
-    // 2. Verifica se o usuário existe e se a senha (BCrypt) bate
     if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
     {
-        // --- A NOVA TRAVA DE SEGURANÇA ---
-        if (!user.EmailVerificado)
-        {
-            // Retorna Status 401 (Não autorizado) informando que falta o token
-            return Results.Json(new { mensagem = "⚠️ Sua conta ainda não foi ativada. Verifique o código no seu e-mail (Mailtrap)." }, statusCode: 401);
-        }
-
-        // 3. LOGIN COM SUCESSO: Envia os dados para o dashboard
         return Results.Ok(new { 
             nome = user.Nome, 
             imc = user.IMC,
@@ -110,10 +94,11 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
         }); 
     }
     
-    // Erro de e-mail ou senha
     return Results.Json(new { mensagem = "❌ E-mail ou senha incorretos." }, statusCode: 400);
 });
+
 app.Run();
 
+// DTOs para comunicação
 public record LoginDTO(string Email, string Senha);
-public record TokenRequest(string Email, string Token);
+public record SolicitacaoEmail(string Email);
