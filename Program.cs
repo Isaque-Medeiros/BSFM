@@ -99,6 +99,42 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
 
 app.Run();
 
+// --- ESQUECI MINHA SENHA: PASSO 1 (GERAR TOKEN) ---
+app.MapPost("/esqueci-senha", (SolicitacaoEmail req) => {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+
+    var email = req.Email.Trim().ToLower();
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == email);
+
+    if (user == null)
+        return Results.Json(new { mensagem = "E-mail não encontrado." }, statusCode: 404);
+
+    string tokenRecuperacao = new Random().Next(100000, 999999).ToString();
+    
+    // Dispara e-mail reaproveitando o EmailService
+    EmailService.EnviarToken(email, tokenRecuperacao);
+
+    return Results.Ok(new { mensagem = "Código de recuperação enviado!", tokenAcesso = tokenRecuperacao });
+});
+
+// --- ESQUECI MINHA SENHA: PASSO 2 (ALTERAR SENHA) ---
+app.MapPost("/redefinir-senha", (RedefinicaoSenha req) => {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
+
+    if (user != null) {
+        user.SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.NovaSenha);
+        db.SaveChanges();
+        return Results.Ok(new { mensagem = "Senha alterada com sucesso!" });
+    }
+
+    return Results.Json(new { mensagem = "Erro ao redefinir. Tente novamente." }, statusCode: 400);
+});
+
 // DTOs para comunicação
 public record LoginDTO(string Email, string Senha);
 public record SolicitacaoEmail(string Email);
+public record RedefinicaoSenha(string Email, string NovaSenha);
