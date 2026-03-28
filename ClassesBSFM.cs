@@ -131,37 +131,39 @@ namespace ClassesBSFM
         public static void EnviarToken(string emailDestino, string token) 
         {
             var mensagem = new MimeMessage();
-            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com")); // Seu e-mail de envio
+            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
             mensagem.To.Add(new MailboxAddress("", emailDestino));
             mensagem.Subject = "Código de Ativação BSFM";
 
             mensagem.Body = new TextPart("html") {
                 Text = $@"
-                    <div style='font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>
-                        <h2 style='color: #059669;'>Bem-vindo ao BSFM!</h2>
-                        <p>Falta pouco para ativar sua conta. Use o código abaixo:</p>
-                        <div style='background: #f3f4f6; padding: 10px; font-size: 24px; font-weight: bold; text-align: center; border-radius: 5px; letter-spacing: 5px;'>
+                <div style='font-family: sans-serif; background-color: #f9f9f9; padding: 20px;'>
+                    <div style='max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; border: 1px solid #ddd;'>
+                        <h2 style='color: #059669; text-align: center;'>Bem-vindo ao BSFM!</h2>
+                        <p style='color: #4b5563; text-align: center;'>Use o código abaixo para ativar sua conta no portal:</p>
+                        <div style='background: #ecfdf5; border: 2px dashed #10b981; padding: 15px; font-size: 30px; font-weight: bold; text-align: center; color: #065f46; letter-spacing: 8px;'>
                             {token}
                         </div>
-                        <p style='color: #6b7280; font-size: 12px; margin-top: 20px;'>Se você não solicitou este código, ignore este e-mail.</p>
-                    </div>"
+                        <p style='color: #9ca3af; font-size: 12px; text-align: center; margin-top: 30px;'>Se você não solicitou este cadastro, por favor ignore este e-mail.</p>
+                    </div>
+                </div>"
             };
 
             using var client = new SmtpClient();
             try {
-                // Buscando dados das variáveis de ambiente do Railway
-                var host = "smtp.gmail.com"; // Ou sandbox.smtp.mailtrap.io
-                var port = 587;
-                var user = "isaquemedeiros190406@gmail.com"; 
-                var pass = "nuxo gsde dzxk nfkd"; // Veja a nota abaixo!
-
-                client.Connect(host, port, SecureSocketOptions.StartTls);
-                client.Authenticate(user, pass);
+                // Remova qualquer espaço ou comentário dessa linha:
+                client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+                
+                // USE AS 16 LETRAS SEM ESPAÇOS:
+                client.Authenticate("isaquemedeiros190406@gmail.com", "nuxogsdedzxknfkd");
+                
                 client.Send(mensagem);
                 client.Disconnect(true);
+                Console.WriteLine("[LOG] E-mail enviado com sucesso!");
             }
             catch (Exception ex) {
-                Console.WriteLine($"[ERRO FATAL E-MAIL]: {ex.Message}");
+                // Aqui ele vai detalhar por que o Railway não achou o Gmail
+                Console.WriteLine($"[ERRO CRÍTICO E-MAIL]: {ex.Message}");
             }
         }
     }

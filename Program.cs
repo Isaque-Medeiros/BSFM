@@ -45,21 +45,21 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     if (db.Usuarios.Any(u => u.Email.ToLower() == email))
         return Results.Json(new { mensagem = "Este e-mail já existe!" }, statusCode: 400);
 
-    // Gerar Token e salvar usuário desativado
     string token = new Random().Next(100000, 999999).ToString();
     usuarioVindoDoJs.TokenVerificacao = token;
-    usuarioVindoDoJs.EmailVerificado = false; // IMPORTANTE: Bloqueado
-    
+    usuarioVindoDoJs.EmailVerificado = false; // Fica travado aqui!
+
+    usuarioVindoDoJs.Email = email;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
 
-    // Enviar e-mail em paralelo
-    Task.Run(() => EmailService.EnviarToken(email, token));
+    // Envia o e-mail em background
+    _ = Task.Run(() => EmailService.EnviarToken(email, token));
 
-    return Results.Ok(new { mensagem = "Cadastro pré-realizado! Verifique seu e-mail." });
+    return Results.Ok(new { mensagem = "Verifique seu e-mail para ativar a conta." });
 });
 
 // --- NOVA ROTA: VERIFICAR TOKEN ---
@@ -67,16 +67,16 @@ app.MapPost("/verificar-token", (TokenRequest req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
 
-    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower() && u.TokenVerificacao == req.Token);
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
 
-    if (user == null)
-        return Results.Json(new { mensagem = "Código incorreto ou expirado." }, statusCode: 400);
-
-    user.EmailVerificado = true; // ATIVA A CONTA
-    user.TokenVerificacao = null; // Limpa o token por segurança
-    db.SaveChanges();
-
-    return Results.Ok(new { mensagem = "Conta ativada com sucesso!" });
+    if (user != null && user.TokenVerificacao == req.Token) {
+        user.EmailVerificado = true; // AGORA A CONTA ESTÁ ATIVA
+        user.TokenVerificacao = null; 
+        db.SaveChanges();
+        return Results.Ok(new { mensagem = "Conta ativada com sucesso!" });
+    }
+    
+    return Results.Json(new { mensagem = "Código inválido." }, statusCode: 400);
 });
 
 // --- ROTA DE LOGIN (Atualizada para checar se está verificado) ---
