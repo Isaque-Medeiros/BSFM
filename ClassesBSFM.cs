@@ -162,7 +162,7 @@ namespace ClassesBSFM
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
                 // 4. Tenta a conexão com as 16 letras (SEM ESPAÇOS)
-                client.Connect("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+                client.Connect("smtp.gmail.com", 465, SecureSocketOptions.StartTls);
                 client.Authenticate("isaquemedeiros190406@gmail.com", "nuxogsdedzxknfkd");
                 
                 client.Send(mensagem);
