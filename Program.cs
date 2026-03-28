@@ -1,11 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using ClassesBSFM;
+using ClassesBSFM; // ESTA LINHA É OBRIGATÓRIA
 using PonteBanco;
 using System.Linq;
-using System.Net;
-using System.Net.Mail;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

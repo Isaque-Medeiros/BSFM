@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MailKit.Net.Smtp;
 using MimeKit;
-using MailKit.Security; // IMPORTANTE: Certifique-se de ter este using
-using System.Net;
-using System.Net.Mail;
+using MailKit.Security;
+// RESOLUÇÃO DO CONFLITO: Dizemos explicitamente para usar o SmtpClient do MailKit
+using SmtpClient = MailKit.Net.Smtp.SmtpClient; 
 
 namespace ClassesBSFM
 {
