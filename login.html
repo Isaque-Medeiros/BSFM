@@ -11,7 +11,7 @@
         body { font-family: 'Inter', sans-serif; }
         
         .bg-login {
-            background: linear-gradient(rgba(5, 150, 105, 0.3), rgba(6, 78, 59, 0.6)), 
+            background: linear-gradient(rgba(5, 150, 105, 0.4), rgba(6, 78, 59, 0.7)), 
                         url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=1920');
             background-size: cover;
             background-position: center;
@@ -19,140 +19,138 @@
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        /* TABS ESTILO MINIMALISTA (Baseado na imagem de exemplo) */
+        /* TABS - AGORA COMO BOTÕES CLAROS */
         .tab-btn {
-            @apply px-4 py-2 text-sm font-semibold transition-all duration-300 relative text-gray-400 border-b-2 border-transparent hover:text-emerald-600;
+            @apply flex-1 py-3 text-sm font-bold transition-all duration-300 rounded-full text-gray-500 hover:text-emerald-600;
         }
         .tab-btn.active {
-            @apply text-emerald-700 border-emerald-500;
+            @apply bg-white text-emerald-700 shadow-md ring-1 ring-black/5;
         }
 
-        /* INPUTS - ALTURA MENOR E MAIS SLIM */
+        /* INPUTS COM CONTORNO SOFT */
         input, select {
-            @apply w-full h-10 px-3 bg-white border border-gray-200 rounded-lg text-sm transition-all duration-200 outline-none;
+            @apply w-full p-4 bg-white border border-gray-300 rounded-xl text-sm transition-all duration-200 outline-none;
         }
         input:focus, select:focus {
-            @apply border-emerald-500 bg-white ring-2 ring-emerald-500/10;
+            @apply border-emerald-500 ring-2 ring-emerald-500/20 shadow-sm;
         }
 
-        /* LABEL MAIS PRÓXIMA DO INPUT */
         label {
-            @apply block text-[11px] font-bold text-gray-500 mb-1 ml-0.5 uppercase tracking-wide;
+            @apply block text-[11px] font-bold text-gray-700 mb-1.5 ml-1 uppercase tracking-wide flex items-center gap-2;
         }
-
-        /* ESPAÇAMENTO ENTRE LINHAS */
-        .input-group { @apply mb-4; }
 
         .form-section { display: none; }
         .form-section.active { display: block; animation: fadeIn 0.4s ease; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-login min-h-screen flex items-center justify-center p-4">
+<body class="bg-login min-h-screen flex items-center justify-center p-6">
 
-<div class="glass-card w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 md:p-10">
+<div class="glass-card w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 md:p-12">
     
     <!-- HEADER -->
-    <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center bg-emerald-600 w-12 h-12 rounded-2xl shadow-md mb-3">
-            <i class="fas fa-apple-whole text-white text-xl"></i>
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center bg-emerald-600 w-14 h-14 rounded-2xl shadow-lg mb-4">
+            <i class="fas fa-apple-whole text-white text-2xl"></i>
         </div>
-        <h2 class="text-2xl font-bold text-emerald-900 tracking-tight">Portal BSFM</h2>
-        <p class="text-gray-500 text-[10px] font-medium uppercase tracking-[0.2em]">Sua saúde, nossa métrica.</p>
+        <h2 class="text-3xl font-extrabold text-emerald-900 tracking-tight">Portal BSFM</h2>
+        <p class="text-gray-500 text-xs font-medium uppercase tracking-widest mt-1">A tecnologia a favor da sua saúde</p>
     </div>
 
-    <!-- SELETOR DE ABAS ESTILO IMAGEM REFERÊNCIA -->
-    <div class="flex justify-center gap-6 mb-8 border-b border-gray-100">
-        <button class="tab-btn active" id="tab-cadastro" onclick="switchTab(event, 'cadastro')">Cadastrar</button>
-        <button class="tab-btn" id="tab-login" onclick="switchTab(event, 'login')">Entrar</button>
+    <!-- SELETOR DE ABAS - CORRIGIDO VISUALMENTE -->
+    <div class="bg-gray-100 p-1.5 rounded-full flex gap-1 mb-10 border border-gray-200">
+        <button class="tab-btn active" id="tab-cadastro" onclick="switchTab(event, 'cadastro')">Criar Conta</button>
+        <button class="tab-btn" id="tab-login" onclick="switchTab(event, 'login')">Acessar Painel</button>
     </div>
 
     <!-- SEÇÃO DE CADASTRO -->
-    <div id="cadastro" class="form-section active">
-        
-        <div class="input-group">
-            <label>Nome Completo</label>
-            <input type="text" id="nome" placeholder="Digite seu nome">
+    <div id="cadastro" class="form-section active space-y-6">
+        <div>
+            <label><i class="fas fa-user text-emerald-600"></i> Nome Completo</label>
+            <input type="text" id="nome" placeholder="Como deseja ser chamado?">
         </div>
         
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="col-span-1">
-                <label>Seu melhor E-mail</label>
-                <input type="email" id="email" placeholder="email@exemplo.com">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label><i class="fas fa-envelope text-emerald-600"></i> E-mail</label>
+                <input type="email" id="email" placeholder="seu@email.com">
             </div>
-            <div class="col-span-1">
-                <label>Defina uma Senha</label>
+            <div>
+                <label><i class="fas fa-lock text-emerald-600"></i> Senha</label>
                 <input type="password" id="senha" placeholder="••••••••">
             </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-3 mb-4">
-            <div class="col-span-1">
-                <label>Idade</label>
-                <input type="number" id="idade" placeholder="Ex: 25">
-            </div>
-            <div class="col-span-3">
-                <label>Sexo Biológico</label>
-                <select id="sexo">
-                    <option value="Feminino">Feminino</option>
-                    <option value="Masculino">Masculino</option>
-                </select>
+        <!-- ÁREA DE INFORMAÇÕES DE SAÚDE - CORRIGIDA (SEM SOBREPOSIÇÃO) -->
+        <div class="border-t border-gray-100 pt-6">
+            <h4 class="text-[10px] text-gray-400 font-bold tracking-[0.2em] mb-4 text-center">INFORMAÇÕES DE SAÚDE</h4>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-6">
+                <div>
+                    <label>Idade</label>
+                    <input type="number" id="idade" placeholder="25">
+                </div>
+                <div>
+                    <label>Sexo</label>
+                    <select id="sexo">
+                        <option value="Feminino">Feminino</option>
+                        <option value="Masculino">Masculino</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Peso (kg)</label>
+                    <input type="number" id="peso" step="0.1" placeholder="70.0">
+                </div>
+                <div>
+                    <label>Altura (m)</label>
+                    <input type="number" id="altura" step="0.01" placeholder="1.70">
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 mb-4">
-            <div class="input-group !mb-0">
-                <label>Peso Atual (kg)</label>
-                <input type="number" id="peso" step="0.1" placeholder="Ex: 75.5">
-            </div>
-            <div class="input-group !mb-0">
-                <label>Sua Altura (m)</label>
-                <input type="number" id="altura" step="0.01" placeholder="Ex: 1.75">
-            </div>
-        </div>
-
-        <div class="input-group">
-            <label>Frequência de Atividade</label>
+        <div class="pt-2">
+            <label><i class="fas fa-person-running text-emerald-600"></i> Frequência de Atividade</label>
             <select id="atividade">
-                <option value="Sedentario">Sedentário (Pouca atividade)</option>
-                <option value="Ativo">Ativo (3-5x na semana)</option>
-                <option value="Muito Ativo">Atleta (Frequente)</option>
+                <option value="Sedentario">Sedentário (Pouco/Nenhum)</option>
+                <option value="Ativo">Ativo (Exercício 3-5x/sem)</option>
+                <option value="Muito Ativo">Muito Ativo (Atleta/Intenso)</option>
             </select>
         </div>
 
-        <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-2">
-            <span>Concluir Cadastro</span>
-            <i class="fas fa-arrow-right text-sm"></i>
+        <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 mt-4">
+            <span>Finalizar Cadastro</span>
+            <i class="fas fa-check-circle"></i>
         </button>
     </div>
 
     <!-- SEÇÃO DE LOGIN -->
-    <div id="login" class="form-section space-y-5 pt-4">
-        <div class="input-group">
-            <label>E-mail</label>
-            <input type="email" id="login_email" placeholder="email@exemplo.com">
+    <div id="login" class="form-section space-y-6">
+        <div class="text-center pb-4">
+            <i class="fas fa-user-lock text-emerald-100 text-6xl"></i>
         </div>
-        <div class="input-group">
-            <label>Senha</label>
+        <div>
+            <label>E-mail do Usuário</label>
+            <input type="email" id="login_email" placeholder="seu@email.com">
+        </div>
+        <div>
+            <label>Senha de Acesso</label>
             <input type="password" id="login_senha" placeholder="••••••••">
         </div>
-        <button onclick="login()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-3.5 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2 mt-2">
-            <span>Acessar Portal</span>
-            <i class="fas fa-sign-in-alt text-sm"></i>
+        <button onclick="login()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95 mt-4">
+            Entrar no Portal <i class="fas fa-arrow-right ml-2"></i>
         </button>
     </div>
 
     <!-- MENSAGENS DE FEEDBACK -->
-    <div id="resultado" class="mt-6 p-3 rounded-lg text-xs font-bold border text-center transition-all duration-300 hidden"></div>
+    <div id="resultado" class="mt-8 p-4 rounded-2xl text-sm font-semibold border text-center transition-all duration-300 hidden"></div>
 
 </div>
 
-<!-- JAVASCRIPT MANTIDO INTEGRALMENTE -->
+<!-- JAVASCRIPT ORIGINAL PRESERVADO -->
 <script>
     const API_URL = 'https://bsfm-production.up.railway.app';
 
