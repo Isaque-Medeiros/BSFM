@@ -4,273 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSFM - Portal Nutricional</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            /* Tema Escuro (Padrão) */
-            --bg-body: #0a0b0d;
-            --bg-container: rgba(20, 25, 30, 0.8);
-            --accent-color: #00f2ff; /* Turquesa Neon */
-            --accent-glow: rgba(0, 242, 255, 0.5);
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --input-bg: rgba(255, 255, 255, 0.05);
-            --input-border: rgba(0, 242, 255, 0.2);
-            --glass-blur: blur(12px);
+        body { font-family: 'Inter', sans-serif; }
+        
+        .bg-login {
+            background: linear-gradient(rgba(5, 150, 105, 0.4), rgba(6, 78, 59, 0.7)), 
+                        url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=1920');
+            background-size: cover;
+            background-position: center;
         }
 
-        /* Classe para Modo Claro */
-        .light-mode {
-            --bg-body: #f0f4f8;
-            --bg-container: rgba(255, 255, 255, 0.9);
-            --accent-color: #008b8b;
-            --accent-glow: rgba(0, 139, 139, 0.3);
-            --text-main: #2c3e50;
-            --text-dim: #7f8c8d;
-            --input-bg: #ffffff;
-            --input-border: #d1d8e0;
+        /* Glassmorphism soft */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: var(--bg-body);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 242, 255, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.05) 0%, transparent 20%);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            transition: background 0.5s ease;
+        /* Abas no estilo da Landing Page */
+        .tab-btn {
+            @apply flex-1 py-3 text-sm font-semibold transition-all duration-300 rounded-full text-gray-500 border border-transparent;
         }
-
-        /* Botão de Troca de Tema */
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--bg-container);
-            border: 1px solid var(--input-border);
-            color: var(--accent-color);
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            backdrop-filter: var(--glass-blur);
-            transition: 0.3s;
-        }
-
-        .container { 
-            background: var(--bg-container); 
-            width: 90%;
-            max-width: 420px; 
-            padding: 40px; 
-            border-radius: 24px; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.5), inset 0 0 2px var(--accent-color);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--input-border);
-            position: relative;
-        }
-
-        h2 { 
-            text-align: center; 
-            color: var(--accent-color); 
-            margin-bottom: 30px; 
-            font-family: 'Orbitron', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px var(--accent-glow);
-        }
-
-        /* Abas */
-        .tabs { 
-            display: flex; 
-            margin-bottom: 30px; 
-            background: var(--input-bg);
-            border-radius: 12px;
-            padding: 5px;
-        }
-        .tab-btn { 
-            flex: 1; padding: 12px; border: none; background: none; 
-            cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-dim);
-            transition: 0.4s;
-            border-radius: 8px;
-        }
-        .tab-btn.active { 
-            color: var(--bg-body); 
-            background: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-glow);
+        .tab-btn.active {
+            @apply bg-emerald-100 text-emerald-800 border-emerald-200 shadow-sm;
         }
 
         .form-section { display: none; }
-        .form-section.active { display: block; animation: slideUp 0.5s ease forwards; }
+        .form-section.active { display: block; animation: fadeIn 0.4s ease; }
 
-        .campo { margin-bottom: 20px; }
-        label { display: block; font-size: 13px; margin-bottom: 8px; font-weight: 400; color: var(--text-dim); }
-        
-        input, select { 
-            width: 100%; padding: 12px 16px; 
-            background: var(--input-bg);
-            border: 1px solid var(--input-border); 
-            border-radius: 10px; 
-            font-size: 14px; 
-            color: var(--text-main);
-            box-sizing: border-box; 
-            transition: 0.3s;
+        input, select {
+            @apply w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all duration-300;
         }
-        input:focus { 
-            border-color: var(--accent-color); 
-            outline: none; 
-            box-shadow: 0 0 10px var(--accent-glow);
-            background: rgba(255,255,255,0.1);
+        input:focus, select:focus {
+            @apply outline-none border-emerald-500 ring-2 ring-emerald-500/20 bg-white;
         }
 
-        button { 
-            background: var(--accent-color); 
-            color: #000; 
-            border: none; 
-            padding: 16px; 
-            width: 100%; 
-            cursor: pointer; 
-            border-radius: 12px; 
-            font-size: 15px; 
-            font-weight: 700; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: 0.3s; 
-            margin-top: 15px;
-        }
-        button:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 5px 20px var(--accent-glow);
-            filter: brightness(1.1);
+        label {
+            @apply block text-xs font-bold text-gray-600 mb-1 ml-1 uppercase tracking-wider;
         }
 
-        /* Estilo específico para o botão de Login sugerido no seu código */
-        #login button {
-            background: transparent;
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-        }
-        #login button:hover {
-            background: var(--accent-color);
-            color: #000;
-        }
-
-        #resultado { 
-            margin-top: 25px; padding: 15px; border-radius: 10px; font-size: 14px;
-            display: none; text-align: center; border: 1px solid transparent;
-        }
-
-        .row { display: flex; gap: 15px; }
-        .row .campo { flex: 1; }
-
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* Estilização dos Selects no modo dark */
-        select option { background: #1a1a1a; color: #fff; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="bg-login min-h-screen flex items-center justify-center p-6">
 
-<button class="theme-toggle" onclick="toggleTheme()">DARK / LIGHT</button>
+<div class="glass-card w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 md:p-12 overflow-hidden">
+    
+    <!-- HEADER -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center bg-emerald-600 p-3 rounded-2xl shadow-lg mb-4">
+            <i class="fas fa-apple-whole text-white text-2xl"></i>
+        </div>
+        <h2 class="text-3xl font-extrabold text-emerald-900 tracking-tight">Portal BSFM</h2>
+        <p class="text-gray-500 text-sm mt-1 font-medium italic">A tecnologia a favor da sua saúde</p>
+    </div>
 
-<div class="container">
-    <h2>BSFM</h2>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'cadastro')">Cadastro</button>
-        <button class="tab-btn" onclick="switchTab(event, 'login')">Login</button>
+    <!-- TABS CENTRALIZADAS -->
+    <div class="bg-gray-100 p-1.5 rounded-full flex gap-1 mb-8">
+        <button class="tab-btn active" id="tab-cadastro" onclick="switchTab(event, 'cadastro')">Criar Conta</button>
+        <button class="tab-btn" id="tab-login" onclick="switchTab(event, 'login')">Acessar Painel</button>
     </div>
 
     <!-- SEÇÃO DE CADASTRO -->
-    <div id="cadastro" class="form-section active">
-        <div class="campo">
-            <label>Nome Completo:</label>
+    <div id="cadastro" class="form-section active space-y-4">
+        <div>
+            <label>Nome Completo</label>
             <input type="text" id="nome" placeholder="Ex: Maria Silva">
         </div>
-        <div class="campo">
-            <label>E-mail:</label>
-            <input type="email" id="email" placeholder="maria@email.com">
-        </div>
-        <div class="campo">
-            <label>Senha:</label>
-            <input type="password" id="senha" placeholder="Crie uma senha">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label>E-mail</label>
+                <input type="email" id="email" placeholder="seu@email.com">
+            </div>
+            <div>
+                <label>Senha</label>
+                <input type="password" id="senha" placeholder="••••••••">
+            </div>
         </div>
 
-        <div class="row">
-            <div class="campo">
-                <label>Idade:</label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="md:col-span-1">
+                <label>Idade</label>
                 <input type="number" id="idade">
             </div>
-            <div class="campo">
-                <label>Sexo:</label>
+            <div class="md:col-span-1">
+                <label>Sexo</label>
                 <select id="sexo">
-                    <option value="Feminino">Feminino</option>
-                    <option value="Masculino">Masculino</option>
+                    <option value="Feminino">Fem</option>
+                    <option value="Masculino">Masc</option>
                 </select>
             </div>
-        </div>
-
-        <div class="row">
-            <div class="campo">
-                <label>Peso (kg):</label>
+            <div class="md:col-span-1">
+                <label>Peso (kg)</label>
                 <input type="number" id="peso" step="0.1" placeholder="70">
             </div>
-            <div class="campo">
-                <label>Altura (m):</label>
+            <div class="md:col-span-1">
+                <label>Altura (m)</label>
                 <input type="number" id="altura" step="0.01" placeholder="1.65">
             </div>
         </div>
 
-        <div class="campo">
-            <label>Nível de Atividade:</label>
+        <div>
+            <label>Nível de Atividade Física</label>
             <select id="atividade">
-                <option value="Sedentario">Sedentário</option>
-                <option value="Ativo">Ativo</option>
-                <option value="Muito Ativo">Muito Ativo</option>
+                <option value="Sedentario">Sedentário (Pouco/Nenhum)</option>
+                <option value="Ativo">Ativo (Exercício 3-5x/sem)</option>
+                <option value="Muito Ativo">Muito Ativo (Atleta/Intenso)</option>
             </select>
         </div>
-        <button onclick="cadastrar()">Finalizar Cadastro</button>
+
+        <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 mt-4">
+            Finalizar Meu Cadastro <i class="fas fa-check-circle ml-2"></i>
+        </button>
     </div>
 
     <!-- SEÇÃO DE LOGIN -->
-    <div id="login" class="form-section">
-        <div class="campo">
-            <label>E-mail:</label>
-            <input type="email" id="login_email" placeholder="Seu e-mail">
+    <div id="login" class="form-section space-y-6">
+        <div class="pt-4 text-center">
+            <i class="fas fa-lock text-emerald-200 text-5xl mb-4"></i>
         </div>
-        <div class="campo">
-            <label>Senha:</label>
-            <input type="password" id="login_senha" placeholder="Sua senha">
+        <div>
+            <label>E-mail do Usuário</label>
+            <input type="email" id="login_email" placeholder="seu@email.com">
         </div>
-        <!-- Mantive o estilo inline mas o CSS agora trata o visual futurista -->
-        <button onclick="login()">Entrar no Painel</button>
+        <div>
+            <label>Sua Senha</label>
+            <input type="password" id="login_senha" placeholder="••••••••">
+        </div>
+        <button onclick="login()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 mt-4">
+            Entrar no Portal <i class="fas fa-arrow-right ml-2"></i>
+        </button>
     </div>
 
-    <div id="resultado"></div>
+    <!-- MENSAGENS DE FEEDBACK -->
+    <div id="resultado" class="mt-8 p-4 rounded-2xl text-sm font-medium border text-center transition-all duration-300"></div>
+
 </div>
 
+<!-- JAVASCRIPT ORIGINAL PRESERVADO -->
 <script>
-    // Função Extra para trocar tema (UI/UX)
-    function toggleTheme() {
-        document.body.classList.toggle('light-mode');
-    }
-
-    // --- SEU JAVASCRIPT ORIGINAL ABAIXO (SEM ALTERAÇÕES DE LÓGICA) ---
-    
     const API_URL = 'https://bsfm-production.up.railway.app';
 
     function switchTab(event, tabId) { 
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
         document.getElementById(tabId).classList.add('active'); 
         event.currentTarget.classList.add('active');
         document.getElementById('resultado').style.display = 'none';
@@ -278,7 +160,6 @@
 
     async function cadastrar() {
         const resDiv = document.getElementById('resultado');
-        
         const dados = {
             Nome: document.getElementById('nome').value,
             Email: document.getElementById('email').value,
@@ -292,7 +173,7 @@
         };
 
         if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            alert("Preencha Nome, Email e Senha!");
+            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
@@ -304,9 +185,9 @@
             });
             const data = await resp.json();
             
-            exibirMensagem(`✅ ${data.mensagem}<br>Faça login para continuar.`, "rgba(46, 204, 113, 0.2)", "#2ecc71");
+            exibirMensagem(`✅ ${data.mensagem}<br>Acesse a aba 'Login' para continuar.`, "#f0fdf4", "#166534", "#dcfce7");
         } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
         }
     }
 
@@ -328,19 +209,19 @@
                 localStorage.setItem('usuarioLogado', JSON.stringify(user));
                 window.location.href = 'dashboard.html'; 
             } else {
-                exibirMensagem("⚠️ E-mail ou senha incorretos.", "rgba(241, 196, 15, 0.2)", "#f1c40f");
+                exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fffbeb", "#92400e", "#fef3c7");
             }
         } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "rgba(231, 76, 60, 0.2)", "#e74c3c");
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
         }
     }
 
-    function exibirMensagem(texto, fundo, cor) {
+    function exibirMensagem(texto, fundo, cor, borda) {
         const resDiv = document.getElementById('resultado');
         resDiv.style.display = "block";
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
-        resDiv.style.borderColor = cor;
+        resDiv.style.borderColor = borda;
         resDiv.innerHTML = texto;
     }
 </script>
