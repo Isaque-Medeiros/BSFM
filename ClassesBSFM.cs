@@ -127,47 +127,44 @@ public class EmailService
 {
     public static void EnviarToken(string emailDestino, string token) 
     {
-        Task.Run(() => {
+        // Roda em segundo plano para liberar o seu site na hora
+        Task.Run(async () => {
             try {
                 var mensagem = new MimeMessage();
-                // Aqui você pode colocar qualquer coisa, o Mailtrap aceita!
-                mensagem.From.Add(new MailboxAddress("Portal BSFM", "sistema-teste@bsfmnutri.io"));
+                mensagem.From.Add(new MailboxAddress("Portal BSFM", "sistema@bsfmnutri.io"));
                 mensagem.To.Add(new MailboxAddress("", emailDestino));
                 mensagem.Subject = "🔐 Código de Ativação BSFM";
 
                 mensagem.Body = new TextPart("html") {
-                    Text = $@"
-                        <div style='font-family: sans-serif; padding: 20px; border: 1px solid #dcfce7; border-radius: 15px;'>
-                            <h2 style='color: #059669;'>Portal BSFM</h2>
-                            <p>Seu código de ativação é:</p>
-                            <div style='background: #f0fdf4; padding: 15px; border-radius: 10px; text-align: center;'>
-                                <span style='font-size: 28px; font-weight: bold; color: #166534;'>{token}</span>
-                            </div>
-                            <p style='font-size: 11px; color: #999; margin-top: 15px;'>Use este código na tela de verificação do portal.</p>
-                        </div>"
+                    Text = $@"<h2 style='color:#059669'>Código BSFM: {token}</h2>"
                 };
 
                 using (var client = new SmtpClient()) 
                 {
-                    // Essencial: Railway às vezes demora a conectar
-                    client.Timeout = 30000; 
+                    // --- AJUSTES PARA FUNCIONAR NO RAILWAY ---
+                    client.Timeout = 30000; // 30 segundos de espera
+                    
+                    // ESSA LINHA ABAIXO É A CHAVE: Desativa a verificação lenta do Linux que causa Timeout
+                    client.CheckCertificateRevocation = false; 
+
                     client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                    // A MUDANÇA MÁGICA: Use a porta 2525
-                    client.Connect("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
+                    // CONEXÃO USANDO PORTA 2525 (A que o Railway raramente bloqueia)
+                    await client.ConnectAsync("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
                     
-                    // Suas credenciais atuais do Mailtrap
-                    client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
+                    await client.AuthenticateAsync("2f43feed9ca5d6", "27f292915287b6");
                     
-                    client.Send(mensagem);
-                    client.Disconnect(true);
-                    Console.WriteLine($"[OK] Código enviado ao Mailtrap: {token}");
+                    await client.SendAsync(mensagem);
+                    await client.DisconnectAsync(true);
+                    
+                    Console.WriteLine($"[EMAIL] SUCESSO! Código {token} enviado.");
                 }
             }
             catch (Exception ex) {
-                // Esse erro vai aparecer no terminal do Railway se houver falha
-                Console.WriteLine($"[ERRO SMTP]: {ex.Message}");
+                // Esse erro aparecerá no seu terminal se o Mailtrap ainda recusar
+                Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
             }
         });
     }
+}
 }
