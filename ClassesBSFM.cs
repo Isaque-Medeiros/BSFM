@@ -123,44 +123,51 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    public class EmailService 
+public class EmailService 
+{
+    public static void EnviarToken(string emailDestino, string token) 
     {
-        public static void EnviarToken(string emailDestino, string token) 
-        {
-            Task.Run(() => {
-                try {
-                    var mensagem = new MimeMessage();
-                    mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
-                    mensagem.To.Add(new MailboxAddress("", emailDestino));
-                    mensagem.Subject = "🔐 Código de Ativação BSFM";
+        Task.Run(() => {
+            try {
+                var mensagem = new MimeMessage();
+                // Aqui você pode colocar qualquer coisa, o Mailtrap aceita!
+                mensagem.From.Add(new MailboxAddress("Portal BSFM", "sistema-teste@bsfmnutri.io"));
+                mensagem.To.Add(new MailboxAddress("", emailDestino));
+                mensagem.Subject = "🔐 Código de Ativação BSFM";
 
-                    mensagem.Body = new TextPart("html") {
-                        Text = $@"
-                            <div style='font-family: sans-serif; padding: 20px; color: #333;'>
-                                <h2 style='color: #059669;'>Olá! Seja bem-vindo ao BSFM.</h2>
-                                <p>Para ativar sua conta utilize o código abaixo:</p>
-                                <div style='background: #f0fdf4; padding: 20px; border-radius: 10px; text-align: center;'>
-                                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #166534;'>{token}</span>
-                                </div>
-                            </div>"
-                    };
+                mensagem.Body = new TextPart("html") {
+                    Text = $@"
+                        <div style='font-family: sans-serif; padding: 20px; border: 1px solid #dcfce7; border-radius: 15px;'>
+                            <h2 style='color: #059669;'>Portal BSFM</h2>
+                            <p>Seu código de ativação é:</p>
+                            <div style='background: #f0fdf4; padding: 15px; border-radius: 10px; text-align: center;'>
+                                <span style='font-size: 28px; font-weight: bold; color: #166534;'>{token}</span>
+                            </div>
+                            <p style='font-size: 11px; color: #999; margin-top: 15px;'>Use este código na tela de verificação do portal.</p>
+                        </div>"
+                };
 
-                    using (var client = new SmtpClient()) 
-                    {
-                        client.Timeout = 15000; 
-                        client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                        client.Connect("sandbox.smtp.mailtrap.io", 587, SecureSocketOptions.StartTls);
-                        client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
-                        
-                        client.Send(mensagem);
-                        client.Disconnect(true);
-                        Console.WriteLine($"[EMAIL] Enviado para {emailDestino}");
-                    }
+                using (var client = new SmtpClient()) 
+                {
+                    // Essencial: Railway às vezes demora a conectar
+                    client.Timeout = 30000; 
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
+                    // A MUDANÇA MÁGICA: Use a porta 2525
+                    client.Connect("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
+                    
+                    // Suas credenciais atuais do Mailtrap
+                    client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
+                    
+                    client.Send(mensagem);
+                    client.Disconnect(true);
+                    Console.WriteLine($"[OK] Código enviado ao Mailtrap: {token}");
                 }
-                catch (Exception ex) {
-                    Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
-                }
-            });
-        }
+            }
+            catch (Exception ex) {
+                // Esse erro vai aparecer no terminal do Railway se houver falha
+                Console.WriteLine($"[ERRO SMTP]: {ex.Message}");
+            }
+        });
     }
 }
