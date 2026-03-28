@@ -6,7 +6,6 @@ using PonteBanco;
 using System.Linq;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
 var builder = WebApplication.CreateBuilder(args);
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
@@ -19,7 +18,6 @@ builder.Services.AddCors(options => {
 builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
-
 app.UseCors("PermitirSite");
 app.UseDefaultFiles();
 app.UseStaticFiles();
@@ -33,108 +31,67 @@ using (var scope = app.Services.CreateScope()) {
 app.MapGet("/", (IWebHostEnvironment env) => 
     Results.File(Path.Combine(env.ContentRootPath, "index.html"), "text/html"));
 
-// --- ROTA 1: APENAS ENVIA O CÓDIGO (NÃO SALVA NO BANCO) ---
-// O Front-end chama isso quando o usuário clica em "Cadastrar"
+// --- ROTA DE REGISTRO (SOLICITA CÓDIGO) ---
 app.MapPost("/solicitar-codigo", (SolicitacaoEmail req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
     var email = req.Email.Trim().ToLower();
     
-    // Verifica se esse usuário já existe no banco antes de mandar e-mail
     if (db.Usuarios.AsNoTracking().Any(u => u.Email.ToLower() == email))
-        return Results.Json(new { mensagem = "Este e-mail já possui uma conta!" }, statusCode: 400);
+        return Results.Json(new { mensagem = "E-mail já cadastrado!" }, statusCode: 400);
 
-    // Gera o código
     string token = new Random().Next(100000, 999999).ToString();
-    
-    // Dispara o email via API Mailtrap que configuramos
     EmailService.EnviarToken(email, token);
-
-    // Retornamos o token para o seu JS poder conferir se o que o usuário digitou está certo
-    return Results.Ok(new { mensagem = "Código enviado!", codigoParaValidar = token });
+    return Results.Ok(new { mensagem = "Código enviado!", tokenParaJs = token });
 });
 
-// --- ROTA 2: FINALMENTE CRIA O USUÁRIO NO BANCO ---
-// O Front-end só chama isso quando o usuário digita o token certo no site
+// --- ROTA DE CADASTRO FINAL (DEPOIS DO TOKEN) ---
 app.MapPost("/cadastrar-usuario-final", (Usuario usuarioVindoDoJs) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
-    var email = usuarioVindoDoJs.Email?.Trim().ToLower();
-
-    // Proteção de última hora (BCrypt e Cálculos Nutricionais)
-    usuarioVindoDoJs.Email = email;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
-    usuarioVindoDoJs.EmailVerificado = true; // Ele já confirmou o token no site
-    
+    usuarioVindoDoJs.EmailVerificado = true; 
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
-
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
-
-    return Results.Ok(new { mensagem = "Perfil criado com sucesso!" });
+    return Results.Ok(new { mensagem = "Perfil Criado!" });
 });
 
-// --- ROTA DE LOGIN (MANTIDA) ---
+// --- ROTA DE LOGIN ---
 app.MapPost("/login", (LoginDTO dadosLogin) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
-    
-    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
-    {
-        return Results.Ok(new { 
-            nome = user.Nome, 
-            imc = user.IMC,
-            tmb = user.TMB,
-            gasto = user.GastoTotal,
-            objetivo = user.TipoPessoa 
-        }); 
+    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash)) {
+        return Results.Ok(new { nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal }); 
     }
-    
-    return Results.Json(new { mensagem = "❌ E-mail ou senha incorretos." }, statusCode: 400);
+    return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
 });
 
-app.Run();
-
-// --- ESQUECI MINHA SENHA: PASSO 1 (GERAR TOKEN) ---
+// --- ROTA DE RECUPERAÇÃO ---
 app.MapPost("/esqueci-senha", (SolicitacaoEmail req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
-    var email = req.Email.Trim().ToLower();
-    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == email);
-
-    if (user == null)
-        return Results.Json(new { mensagem = "E-mail não encontrado." }, statusCode: 404);
-
-    string tokenRecuperacao = new Random().Next(100000, 999999).ToString();
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
+    if (user == null) return Results.Json(new { mensagem = "E-mail não encontrado." }, statusCode: 404);
     
-    // Dispara e-mail reaproveitando o EmailService
-    EmailService.EnviarToken(email, tokenRecuperacao);
-
-    return Results.Ok(new { mensagem = "Código de recuperação enviado!", tokenAcesso = tokenRecuperacao });
+    string tokenRec = new Random().Next(100000, 999999).ToString();
+    EmailService.EnviarToken(user.Email, tokenRec);
+    return Results.Ok(new { mensagem = "Código Enviado!", tokenParaJs = tokenRec });
 });
 
-// --- ESQUECI MINHA SENHA: PASSO 2 (ALTERAR SENHA) ---
 app.MapPost("/redefinir-senha", (RedefinicaoSenha req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
-
-    if (user != null) {
-        user.SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.NovaSenha);
-        db.SaveChanges();
-        return Results.Ok(new { mensagem = "Senha alterada com sucesso!" });
-    }
-
-    return Results.Json(new { mensagem = "Erro ao redefinir. Tente novamente." }, statusCode: 400);
+    if (user == null) return Results.NotFound();
+    user.SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.NovaSenha);
+    db.SaveChanges();
+    return Results.Ok();
 });
 
-// DTOs para comunicação
+app.Run(); // FINAL DO ARQUIVO (Sempre assim!)
+
 public record LoginDTO(string Email, string Senha);
 public record SolicitacaoEmail(string Email);
 public record RedefinicaoSenha(string Email, string NovaSenha);

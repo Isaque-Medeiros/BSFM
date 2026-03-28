@@ -258,49 +258,44 @@
 <script>
     const API_URL = 'https://bsfm-production.up.railway.app';
     
-    // VARIÁVEIS GLOBAIS (Devem estar fora das funções)
-    let emailRegistrado = ""; 
-    let tokenServidor = ""; 
-    let dadosTemporarios = {}; 
+    // VARIÁVEIS TOTAIS - LUGAR CERTO: NO TOPO!
+    let emailAcao = ""; 
+    let tokenSistema = ""; 
+    let usuarioTemporario = {}; 
 
     function switchTab(event, tabId) { 
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
         document.getElementById(tabId).classList.add('active'); 
-        document.getElementById('nav-tabs').classList.remove('hidden');
-
-        document.querySelectorAll('button[id^="btn-"]').forEach(btn => {
-            btn.classList.remove('tab-active');
-            btn.classList.add('text-gray-500');
-        });
         
-        if(event && event.currentTarget) {
-            event.currentTarget.classList.add('tab-active');
-            event.currentTarget.classList.remove('text-gray-500');
+        // Esconde abas de navegação em telas especiais
+        const abas = document.getElementById('nav-tabs');
+        if(tabId === 'recuperar-senha' || tabId === 'verificacao-token') {
+            abas.classList.add('hidden');
+        } else {
+            abas.classList.remove('hidden');
         }
 
-        const resDiv = document.getElementById('resultado');
-        resDiv.style.display = 'none';
-        resDiv.classList.add('hidden');
+        // Estilo dos botões (opcional visual)
+        document.querySelectorAll('button[id^="btn-"]').forEach(btn => btn.classList.remove('tab-active'));
+        if(event && event.currentTarget) event.currentTarget.classList.add('tab-active');
+
+        document.getElementById('resultado').style.display = 'none';
     }
 
-    function exibirMensagem(texto, fundo, cor, borda) {
+    function exibirMensagem(texto, fundo, cor) {
         const resDiv = document.getElementById('resultado');
-        if (!resDiv) return;
-        resDiv.innerHTML = texto;
+        resDiv.style.display = "block";
+        resDiv.classList.remove('hidden');
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
-        resDiv.style.borderColor = borda;
-        resDiv.classList.remove('hidden');
-        resDiv.style.display = "block";
+        resDiv.innerHTML = texto;
     }
 
+    // Ação: Iniciar Cadastro
     async function cadastrar() {
-        const emailInput = document.getElementById('email').value;
-        
-        // Salvamos os dados na variável global (Memória do Navegador)
-        dadosTemporarios = {
+        usuarioTemporario = {
             Nome: document.getElementById('nome').value,
-            Email: emailInput,
+            Email: document.getElementById('email').value,
             SenhaHash: document.getElementById('senha').value,
             Idade: parseInt(document.getElementById('idade').value) || 0,
             Peso: parseFloat(document.getElementById('peso').value) || 0,
@@ -310,169 +305,100 @@
             AceitouTermos: true
         };
 
-        if(!dadosTemporarios.Nome || !dadosTemporarios.Email || !dadosTemporarios.SenhaHash) {
-            exibirMensagem("⚠️ Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
         try {
-            exibirMensagem("⏳ Processando e-mail...", "#f0fdf4", "#166534", "#dcfce7");
-
+            exibirMensagem("⏳ Verificando dados...", "#fffbeb", "#92400e");
             const resp = await fetch(`${API_URL}/solicitar-codigo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Email: emailInput })
+                body: JSON.stringify({ Email: usuarioTemporario.Email })
             });
 
             const data = await resp.json();
-
-            if (resp.ok) {
-                // Sincronizado com o nome que vem do seu Program.cs
-                tokenServidor = data.codigoParaValidar; 
-                emailRegistrado = emailInput;
-
-                exibirMensagem(`✅ Código enviado! Verifique o Mailtrap.`, "#f0fdf4", "#166534", "#dcfce7");
-                
-                setTimeout(() => {
-                    document.getElementById('nav-tabs').classList.add('hidden');
-                    switchTab(null, 'verificacao-token');
-                }, 1500);
+            if(resp.ok) {
+                tokenSistema = data.tokenParaJs;
+                emailAcao = usuarioTemporario.Email;
+                exibirMensagem("📩 Código enviado ao Mailtrap!", "#f0fdf4", "#166534");
+                setTimeout(() => switchTab(null, 'verificacao-token'), 1500);
             } else {
-                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+                exibirMensagem(data.mensagem, "#fef2f2", "#991b1b");
             }
-        } catch (err) {
-            exibirMensagem("❌ Erro de conexão com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
+        } catch(e) {
+            exibirMensagem("❌ Erro ao conectar ao portal.", "#fef2f2", "#991b1b");
         }
     }
 
+    // Ação: Verificar Token e Gravar Usuário no Banco
     async function verificarToken() {
-        const tokenDigitado = document.getElementById('token_input').value;
-
-        // Validamos na memória do JS primeiro para ser instantâneo
-        if (tokenDigitado === tokenServidor) {
-            exibirMensagem("🔄 Validado! Criando perfil...", "#f0fdf4", "#166534", "#dcfce7");
-
-            try {
-                // Rota que criamos no Program.cs para salvar de fato no Banco
-                const resp = await fetch(`${API_URL}/cadastrar-usuario-final`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dadosTemporarios)
-                });
-
-                if (resp.ok) {
-                    exibirMensagem("✨ Cadastro Realizado! Bem-vindo.", "#f0fdf4", "#166534", "#dcfce7");
-                    setTimeout(() => {
-                        switchTab(null, 'login');
-                        document.getElementById('btn-login').click();
-                    }, 2000);
-                }
-            } catch (e) {
-                exibirMensagem("❌ Erro ao salvar dados no banco.", "#fef2f2", "#991b1b", "#fee2e2");
+        const digitado = document.getElementById('token_input').value;
+        if(digitado === tokenSistema) {
+            exibirMensagem("🔄 Criando Perfil...", "#f0fdf4", "#166534");
+            const final = await fetch(`${API_URL}/cadastrar-usuario-final`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(usuarioTemporario)
+            });
+            if(final.ok) {
+                exibirMensagem("✨ Pronto! Agora faça Login.", "#f0fdf4", "#166534");
+                setTimeout(() => location.reload(), 2000);
             }
         } else {
-            exibirMensagem("⚠️ Código inválido. Confira no Mailtrap!", "#fffbeb", "#92400e", "#fef3c7");
+            exibirMensagem("⚠️ Código inválido.", "#fef2f2", "#991b1b");
         }
     }
 
-    async function login() {
-        const dadosLogin = {
-            Email: document.getElementById('login_email').value,
-            Senha: document.getElementById('login_senha').value
-        };
-
-        if(!dadosLogin.Email || !dadosLogin.Senha) {
-            exibirMensagem("⚠️ Preencha os campos para entrar.", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
+    // Ação: Recuperar Senha
+    async function solicitarCodigoRecuperacao() {
+        emailAcao = document.getElementById('recuperar_email').value;
         try {
-            const resp = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dadosLogin)
-            });
-
-            const data = await resp.json();
-
-            if (resp.ok) {
-                localStorage.setItem('usuarioLogado', JSON.stringify(data));
-                window.location.href = 'dashboard.html'; 
-            } else {
-                exibirMensagem(`⚠️ ${data.mensagem}`, "#fef2f2", "#991b1b", "#fee2e2");
-            }
-        } catch (err) {
-            exibirMensagem("❌ Erro de conexão.", "#fef2f2", "#991b1b", "#fee2e2");
-        }
-    }
-
-        async function solicitarCodigoRecuperacao() {
-        const email = document.getElementById('recuperar_email').value;
-        
-        if(!email) {
-            exibirMensagem("⚠️ Informe seu e-mail para continuar.", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        try {
-            exibirMensagem("⏳ Buscando conta...", "#fffbeb", "#92400e", "#fef3c7");
-
             const resp = await fetch(`${API_URL}/esqueci-senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Email: email })
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ Email: emailAcao })
             });
-
             const data = await resp.json();
-
-            if (resp.ok) {
-                tokenServidor = data.tokenAcesso; 
-                emailRegistrado = email; // Usamos o e-mail informado
-                
-                exibirMensagem("✅ Código enviado! Verifique seu Mailtrap.", "#f0fdf4", "#166534", "#dcfce7");
-                
-                // UI: Mostra o próximo passo da recuperação
+            if(resp.ok) {
+                tokenSistema = data.tokenParaJs;
                 document.getElementById('passo-2-recuperar').classList.remove('hidden');
-                document.getElementById('passo-1-recuperar').style.opacity = "0.5";
-                document.getElementById('passo-1-recuperar').style.pointerEvents = "none";
+                document.getElementById('passo-1-recuperar').style.display = 'none';
+                exibirMensagem("🔑 Verifique o código no e-mail.", "#f0fdf4", "#166534");
             } else {
-                exibirMensagem(`⚠️ ${data.mensagem}`, "#fef2f2", "#991b1b", "#fee2e2");
+                exibirMensagem(data.mensagem, "#fef2f2", "#991b1b");
             }
-        } catch (err) {
-            exibirMensagem("❌ Erro ao conectar ao portal.", "#fef2f2", "#991b1b", "#fee2e2");
-        }
+        } catch(e) { exibirMensagem("❌ Conexão falhou.", "#fef2f2", "#991b1b"); }
     }
 
     async function finalizarRecuperacao() {
-        const tokenDigitado = document.getElementById('recuperar_token').value;
-        const novaSenha = document.getElementById('recuperar_nova_senha').value;
-
-        if(tokenDigitado !== tokenServidor) {
-            exibirMensagem("⚠️ Código inválido ou expirado.", "#fef2f2", "#991b1b", "#fee2e2");
-            return;
-        }
-
-        if(novaSenha.length < 3) {
-            exibirMensagem("⚠️ Sua senha deve ser mais forte.", "#fef2f2", "#991b1b", "#fee2e2");
-            return;
-        }
-
-        try {
-            const resp = await fetch(`${API_URL}/redefinir-senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ Email: emailRegistrado, NovaSenha: novaSenha })
+        const tokenToken = document.getElementById('recuperar_token').value;
+        const nova = document.getElementById('recuperar_nova_senha').value;
+        if(tokenToken === tokenSistema) {
+            await fetch(`${API_URL}/redefinir-senha`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ Email: emailAcao, NovaSenha: nova })
             });
-
-            if (resp.ok) {
-                exibirMensagem("✨ Senha redefinida! Faça login agora.", "#f0fdf4", "#166534", "#dcfce7");
-                setTimeout(() => {
-                    location.reload(); // Recarrega para limpar as variáveis
-                }, 3000);
-            }
-        } catch (e) {
-            exibirMensagem("❌ Erro ao trocar a senha no banco.", "#fef2f2", "#991b1b", "#fee2e2");
+            exibirMensagem("✨ Senha trocada!", "#f0fdf4", "#166534");
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            exibirMensagem("⚠️ Código errado.", "#fef2f2", "#991b1b");
         }
+    }
+
+    // Ação: Login
+    async function login() {
+        const d = { 
+            Email: document.getElementById('login_email').value, 
+            Senha: document.getElementById('login_senha').value 
+        };
+        try {
+            const r = await fetch(`${API_URL}/login`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(d)
+            });
+            const info = await r.json();
+            if(r.ok) {
+                localStorage.setItem('usuarioLogado', JSON.stringify(info));
+                window.location.href = 'dashboard.html';
+            } else {
+                exibirMensagem(info.mensagem, "#fef2f2", "#991b1b");
+            }
+        } catch(e) { exibirMensagem("❌ Portal offline.", "#fef2f2", "#991b1b"); }
     }
 </script>
 
