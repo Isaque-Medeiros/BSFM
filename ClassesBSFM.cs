@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks; // ADICIONADO: Necessário para o Task.Run
 using MimeKit;
 using MailKit.Security;
 // RESOLUÇÃO DO CONFLITO: Dizemos explicitamente para usar o SmtpClient do MailKit
@@ -20,7 +21,7 @@ namespace ClassesBSFM
         public string? TokenVerificacao { get; set; }
         public bool EmailVerificado { get; set; } = false;
 
-        public string SenhaHash { get; set; } = string.Empty; // OK: Combina com Engrenagem e Program
+        public string SenhaHash { get; set; } = string.Empty; 
         public bool AceitouTermos { get; set; }
         public DateTime DataAceite { get; set; }
         public string VersaoTermos { get; set; } = string.Empty;
@@ -74,26 +75,23 @@ namespace ClassesBSFM
         }
     }
 
-   // ADICIONADO 'public' EM TODAS AS CLASSES ABAIXO:
-   public class Refeição
-   {
+    public class Refeição
+    {
         [Key]
         public int ID { get; set; }
-
         public string NomeRefeição { get; set; } = string.Empty;
-        public string Categoria { get; set; } = string.Empty; // Valor inicial
+        public string Categoria { get; set; } = string.Empty; 
         public string Ingredientes { get; set; } = string.Empty;
         public double Calorias { get; set; }
         public double Proteínas { get; set; }
         public double Carboidratos { get; set; }
         public double Gorduras { get; set; }
-   }
+    }
 
     public class Comida
     {
         [Key]
         public int ID { get; set; }
-
         public string NomeComida { get; set; } = string.Empty;
         public string Categoria { get; set; } = string.Empty;
         public double Calorias { get; set; }
@@ -106,7 +104,6 @@ namespace ClassesBSFM
     {
         [Key]
         public int ID { get; set; }
-
         public Usuario? Usuario { get; set; }
         public string Refeições { get; set; } = string.Empty;
         public string Planos { get; set; } = string.Empty;
@@ -121,53 +118,49 @@ namespace ClassesBSFM
     {
         [Key]
         public int ID { get; set; }
-
         public string NomeHospital { get; set; } = string.Empty;
         public string Endereço { get; set; } = string.Empty;
         public string Telefone { get; set; } = string.Empty;
     }
 
     public class EmailService 
-{
-    public static void EnviarToken(string emailDestino, string token) 
     {
-        // Rodamos tudo em segundo plano absoluto para não travar o cadastro
-        Task.Run(() => {
-            try {
-                var mensagem = new MimeMessage();
-                mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
-                mensagem.To.Add(new MailboxAddress("", emailDestino));
-                mensagem.Subject = "🔐 Código de Ativação BSFM";
+        public static void EnviarToken(string emailDestino, string token) 
+        {
+            Task.Run(() => {
+                try {
+                    var mensagem = new MimeMessage();
+                    mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
+                    mensagem.To.Add(new MailboxAddress("", emailDestino));
+                    mensagem.Subject = "🔐 Código de Ativação BSFM";
 
-                mensagem.Body = new TextPart("html") {
-                    Text = $@"
-                        <div style='font-family: sans-serif; padding: 20px; color: #333;'>
-                            <h2 style='color: #059669;'>Olá! Seja bem-vindo ao BSFM.</h2>
-                            <p>Para ativar sua conta e começar sua jornada nutricional, utilize o código abaixo:</p>
-                            <div style='background: #f0fdf4; padding: 20px; border-radius: 10px; text-align: center;'>
-                                <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #166534;'>{token}</span>
-                            </div>
-                            <p style='margin-top: 20px; font-size: 12px; color: #666;'>Se você não solicitou este código, por favor desconsidere.</p>
-                        </div>"
-                };
+                    mensagem.Body = new TextPart("html") {
+                        Text = $@"
+                            <div style='font-family: sans-serif; padding: 20px; color: #333;'>
+                                <h2 style='color: #059669;'>Olá! Seja bem-vindo ao BSFM.</h2>
+                                <p>Para ativar sua conta utilize o código abaixo:</p>
+                                <div style='background: #f0fdf4; padding: 20px; border-radius: 10px; text-align: center;'>
+                                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #166534;'>{token}</span>
+                                </div>
+                            </div>"
+                    };
 
-                using (var client = new SmtpClient()) 
-                {
-                    client.Timeout = 15000; // 15 segundos máximo
-                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
-                    // PORTA 587 é muito mais estável no Railway do que a 465
-                    client.Connect("sandbox.smtp.mailtrap.io", 587, SecureSocketOptions.StartTls);
-                    client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
-                    
-                    client.Send(mensagem);
-                    client.Disconnect(true);
-                    Console.WriteLine($"[EMAIL] Enviado para {emailDestino}");
+                    using (var client = new SmtpClient()) 
+                    {
+                        client.Timeout = 15000; 
+                        client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                        client.Connect("sandbox.smtp.mailtrap.io", 587, SecureSocketOptions.StartTls);
+                        client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
+                        
+                        client.Send(mensagem);
+                        client.Disconnect(true);
+                        Console.WriteLine($"[EMAIL] Enviado para {emailDestino}");
+                    }
                 }
-            }
-            catch (Exception ex) {
-                Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
-            }
-        });
+                catch (Exception ex) {
+                    Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
+                }
+            });
+        }
     }
 }
