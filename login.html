@@ -85,6 +85,11 @@
             font-weight: bold;
             padding-left: 2rem;
         }
+        .cadastro_login{
+            display: flex;
+            align-content: center;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="bg-login min-h-screen flex items-center justify-center p-6">
@@ -101,9 +106,12 @@
     </div>
 
     <!-- Navegação de Abas -->
+    <div class="cardastro_login"> 
     <div id="nav-tabs" class="flex bg-gray-100 rounded-2xl p-1.5 mb-8">
-        <button onclick="switchTab(event, 'cadastro')" id="btn-cadastro" class="tab-btn tab-active">Criar Conta</button>
+        <button onclick="switchTab(event, 'cadastro')" id="btn-cadastro" class="tab-btn tab-active">Criar Conta</button></div>
+    <div id="nav-tabs" class="flex bg-gray-100 rounded-2xl p-1.5 mb-8">
         <button onclick="switchTab(event, 'login')" id="btn-login" class="tab-btn tab-inactive">Entrar</button>
+    </div>
     </div>
 
     <!-- FORMULÁRIO DE CADASTRO -->
