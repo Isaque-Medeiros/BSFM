@@ -8,221 +8,249 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Base typography */
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
 
-        /* Custom scrollbar for subtle touch in darker areas (if applied by browser/OS) */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f0f2f5;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #d1fae5; /* Light emerald for consistency */
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #bbf7d0; /* Darker emerald on hover */
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f0f2f5; }
+        ::-webkit-scrollbar-thumb { background: #d1fae5; border-radius: 10px; }
+
+        /* Sidebar Responsive Logic */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
         }
 
-        /* Sidebar Nav Item Base & Hover State - Adjusted for Tailwind usage */
+        @media (max-width: 768px) {
+            .sidebar-hidden { transform: translateX(-100%); }
+            .sidebar-visible { transform: translateX(0); }
+        }
+
+        /* Estilos convertidos para CSS padrão (para funcionar sem build step) */
         .nav-item-dashboard {
-            @apply flex items-center px-4 py-3 mb-2 rounded-xl text-gray-700 text-sm font-medium transition-all duration-300;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.75rem;
+            color: #374151;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s;
         }
         .nav-item-dashboard:hover, .nav-item-dashboard.active {
-            @apply bg-emerald-50 text-emerald-700;
+            background-color: #ecfdf5;
+            color: #047857;
         }
-        .nav-item-dashboard i { /* Icon styling */
-            @apply text-lg mr-3 w-5 text-center;
-        }
+        .nav-item-dashboard i { font-size: 1.125rem; margin-right: 0.75rem; width: 1.25rem; text-align: center; }
 
-        /* Button - Secondary Action (used for logout) */
         .btn-secondary-action {
-            @apply flex-grow px-4 py-3 mt-4 text-sm font-medium rounded-xl transition-all duration-300;
-            @apply bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-700;
-            @apply border border-transparent hover:border-emerald-200;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.75rem;
+            background-color: #f3f4f6;
+            color: #4b5563;
+            transition: all 0.3s;
         }
+        .btn-secondary-action:hover { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
 
-        /* Danger Button (for emergencies, etc.) */
         .btn-danger-action {
-            @apply flex-grow px-4 py-3 mt-4 text-sm font-medium rounded-xl transition-all duration-300;
-            @apply bg-red-100 text-red-700 hover:bg-red-200 hover:text-red-800;
-            @apply border border-transparent hover:border-red-300;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.75rem;
+            background-color: #fee2e2;
+            color: #b91c1c;
+            transition: all 0.3s;
         }
+        .btn-danger-action:hover { background-color: #fecaca; }
 
-        /* Metrics Display adjustments */
-        .metric-value-display {
-            @apply font-semibold text-3xl mt-2 text-emerald-600;
+        .metric-value-display { font-weight: 600; font-size: 1.875rem; margin-top: 0.5rem; color: #059669; }
+
+        /* Overlay para mobile */
+        #overlay { display: none; }
+        @media (max-width: 768px) {
+            #overlay.active { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 40; }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased flex">
+<body class="bg-gray-50 text-gray-800 antialiased flex min-h-screen">
 
-    <!-- SIDEBAR NAV (Left) -->
-    <aside class="w-72 bg-white h-screen border-r border-gray-200 p-6 flex flex-col justify-between shadow-lg sticky top-0 z-50">
+    <!-- OVERLAY (Somente Mobile) -->
+    <div id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR NAV -->
+    <aside id="sidebar" class="fixed md:sticky top-0 left-0 w-72 bg-white h-screen border-r border-gray-200 p-6 flex flex-col justify-between shadow-lg z-50 sidebar-hidden md:sidebar-visible">
         <div>
-            <!-- LOGO: From Landing Page -->
-            <div class="flex items-center gap-3 mb-12">
-                <div class="bg-emerald-600 p-2 rounded-lg shadow-md">
-                    <i class="fas fa-apple-whole text-white text-xl"></i>
+            <div class="flex items-center justify-between mb-8 md:mb-12">
+                <div class="flex items-center gap-3">
+                    <div class="bg-emerald-600 p-2 rounded-lg shadow-md">
+                        <i class="fas fa-apple-whole text-white text-xl"></i>
+                    </div>
+                    <span class="font-bold text-2xl text-emerald-800 tracking-tight">BSFM</span>
                 </div>
-                <span class="font-bold text-2xl text-emerald-800 tracking-tight">BSFM</span>
+                <!-- Fechar mobile -->
+                <button class="md:hidden text-gray-500 text-2xl" onclick="toggleSidebar()">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
 
-            <!-- NAVIGATION ITEMS: Aligned with your RFs and design system -->
-            <nav class="space-y-2">
+            <nav class="space-y-1">
                 <a href="#" class="nav-item-dashboard active">
                     <i class="fas fa-fw fa-solar-panel"></i> <span>Painel Principal</span>
                 </a>
                 <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-calendar-alt"></i> <span>Diário Alimentar <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF06</span></span>
+                    <i class="fas fa-fw fa-calendar-alt"></i> <span>Diário Alimentar <span class="hidden xl:inline-block text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full ml-1">RF06</span></span>
                 </a>
                 <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-camera"></i> <span>Analisador IA <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF03</span></span>
+                    <i class="fas fa-fw fa-camera"></i> <span>Analisador IA <span class="hidden xl:inline-block text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full ml-1">RF03</span></span>
                 </a>
                 <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-chart-line"></i> <span>Minhas Metas <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF07</span></span>
+                    <i class="fas fa-fw fa-chart-line"></i> <span>Metas <span class="hidden xl:inline-block text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full ml-1">RF07</span></span>
                 </a>
                 <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-heart-circle-bolt"></i> <span>SOS Saúde <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF05</span></span>
+                    <i class="fas fa-fw fa-heart-circle-bolt"></i> <span>SOS Saúde <span class="hidden xl:inline-block text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full ml-1">RF05</span></span>
                 </a>
                 <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-user"></i> <span>Meu Perfil <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF01</span></span>
-                </a>
-                <a href="#" class="nav-item-dashboard">
-                    <i class="fas fa-fw fa-hands-asl-interpreting"></i> <span>Acessibilidade LIBRAS <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF08</span></span>
+                    <i class="fas fa-fw fa-hands-asl-interpreting"></i> <span>LIBRAS <span class="hidden xl:inline-block text-[10px] bg-emerald-100 px-2 py-0.5 rounded-full ml-1">RF08</span></span>
                 </a>
             </nav>
         </div>
         
-        <!-- Bottom Actions (Logout) -->
         <div>
-            <button onclick="sair()" class="btn-secondary-action w-full flex justify-center items-center">
+            <button onclick="sair()" class="btn-secondary-action">
                 <i class="fas fa-sign-out-alt mr-2 text-red-500"></i> Encerrar Sessão
             </button>
         </div>
     </aside>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 p-8">
-        <header class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 leading-tight">Olá, <span id="displayNome" class="text-emerald-700">...</span>!</h1>
-                <p class="text-gray-500 text-lg">Aqui está o seu resumo nutricional.</p>
-            </div>
-            <!-- Empty space, might be used for quick actions or profile pic in the future -->
-            <div>
-                <!-- Add other header elements if needed (e.g., notification, user dropdown) -->
+    <main class="flex-1 w-full transition-all">
+        <!-- HEADER COM BOTÃO HAMBURGUER PARA MOBILE -->
+        <header class="bg-white border-b p-4 md:p-8 flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-emerald-800 text-2xl p-2">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl md:text-3xl font-bold text-gray-900">Olá, <span id="displayNome" class="text-emerald-700">...</span>!</h1>
+                    <p class="text-gray-500 text-sm md:text-lg">Resumo nutricional de hoje.</p>
+                </div>
             </div>
         </header>
 
-        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <!-- IMC CARD -->
-            <div class="bg-white rounded-2xl shadow-md p-6 text-center border border-gray-100">
-                <p class="text-sm uppercase font-semibold text-gray-500 mb-2">Seu IMC</p>
-                <div id="displayIMC" class="metric-value-display">--</div>
-                <p class="text-gray-400 text-sm mt-3">Índice de Massa Corporal</p>
-            </div>
-
-            <!-- TMB CARD -->
-            <div class="bg-white rounded-2xl shadow-md p-6 text-center border border-gray-100">
-                <p class="text-sm uppercase font-semibold text-gray-500 mb-2">Metabolismo Basal (TMB) <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF02</span></p>
-                <div id="displayTMB" class="metric-value-display">--</div>
-                <p class="text-gray-400 text-sm mt-3">Kcal diárias em repouso</p>
-            </div>
-
-            <!-- GASTO DIÁRIO CARD -->
-            <div class="bg-white rounded-2xl shadow-md p-6 text-center border border-gray-100">
-                <p class="text-sm uppercase font-semibold text-gray-500 mb-2">Gasto Diário Est. (TDEE) <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF02</span></p>
-                <div id="displayGasto" class="metric-value-display">--</div>
-                <p class="text-gray-400 text-sm mt-3">Calorias diárias recomendadas</p>
-            </div>
-        </section>
-
-        <!-- SECÇÃO DE RECURSOS DIVERSOS (Cards menores para os RFs) -->
-        <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-
-            <!-- Card para Reconhecimento de Prato (IA) RF03/RF04 -->
-            <div class="bg-white rounded-2xl shadow-md p-6 flex flex-col justify-center items-center border border-gray-100 h-full">
-                <i class="fas fa-camera text-emerald-500 text-5xl mb-4"></i>
-                <h3 class="text-xl font-bold text-gray-900 mb-3">Análise Inteligente por IA <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF03/RF04</span></h3>
-                <p class="text-gray-500 text-center mb-4 text-sm">Escaneie seus pratos para estimativa nutricional e verificação de frescor.</p>
-                <button class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-base font-semibold py-3 px-6 rounded-lg transition">
-                    Abrir Câmera <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
-
-            <!-- Card para Metas e Evolução RF07 -->
-            <div class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-                <i class="fas fa-chart-line text-blue-500 text-5xl mb-4"></i>
-                <h3 class="text-xl font-bold text-gray-900 mb-3">Minhas Metas e Gráficos <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF07</span></h3>
-                <p class="text-gray-500 text-sm mb-4">Acompanhe seu progresso de peso, hidratação e mais com gráficos claros.</p>
-                <!-- Placeholder para barra de progresso -->
-                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
-                    <div class="bg-blue-400 h-3 rounded-full" style="width: 75%;"></div>
+        <div class="px-4 md:px-8 pb-10">
+            <!-- CARDS DE MÉTRICAS -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100">
+                    <p class="text-xs uppercase font-semibold text-gray-500">Seu IMC</p>
+                    <div id="displayIMC" class="metric-value-display">--</div>
+                    <p class="text-gray-400 text-[10px] md:text-xs mt-3">Índice de Massa Corporal</p>
                 </div>
-                <p class="text-sm text-gray-600 mb-4">Hidratação Semanal: 75% concluída.</p>
-                <button class="bg-blue-100 text-blue-700 hover:bg-blue-200 text-base font-semibold py-3 px-6 rounded-lg transition">
-                    Ver Progresso <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
 
-            <!-- Card para Localizador de Emergência Médica RF05 -->
-            <div class="bg-red-50 rounded-2xl shadow-md p-6 flex flex-col justify-center items-center border border-red-100">
-                <i class="fas fa-map-location-dot text-red-500 text-5xl mb-4"></i>
-                <h3 class="text-xl font-bold text-gray-900 mb-3">Localizador de Emergência <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full ml-2">RF05</span></h3>
-                <p class="text-gray-500 text-center mb-4 text-sm">Encontre UPAs ou hospitais próximos em situações de urgência.</p>
-                <button class="btn-danger-action bg-red-600 text-white hover:bg-red-700 text-base font-semibold py-3 px-6 rounded-lg transition">
-                    Abrir Mapa <i class="fas fa-exclamation-triangle ml-2"></i>
-                </button>
-            </div>
-            
-             <!-- Card para Módulo de LIBRAS RF08 -->
-             <div class="bg-green-50 rounded-2xl shadow-md p-6 flex flex-col justify-center items-center border border-green-100">
-                <i class="fas fa-hands-asl-interpreting text-green-600 text-5xl mb-4"></i>
-                <h3 class="text-xl font-bold text-gray-900 mb-3">Módulo LIBRAS <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full ml-2">RF08</span></h3>
-                <p class="text-gray-500 text-center mb-4 text-sm">Aprenda sobre nutrição saudável através de vídeos em Língua Brasileira de Sinais.</p>
-                <button class="bg-green-600 text-white hover:bg-green-700 text-base font-semibold py-3 px-6 rounded-lg transition">
-                    Ver Conteúdo <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
-
-             <!-- Placeholder para Diário Alimentar e Cronograma RF06 (Maior Card) -->
-             <div class="lg:col-span-2 bg-white rounded-2xl shadow-md p-6 flex flex-col justify-between border border-gray-100">
-                <div>
-                    <i class="fas fa-book-open text-orange-500 text-5xl mb-4"></i>
-                    <h3 class="text-xl font-bold text-gray-900 mb-3">Diário Alimentar e Plano <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full ml-2">RF06</span></h3>
-                    <p class="text-gray-500 text-sm mb-6">Registre suas refeições, planeje sua dieta e receba diretrizes nutricionais personalizadas para seus objetivos.</p>
+                <div class="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100">
+                    <p class="text-xs uppercase font-semibold text-gray-500">Metabolismo (TMB)</p>
+                    <div id="displayTMB" class="metric-value-display">--</div>
+                    <p class="text-gray-400 text-[10px] md:text-xs mt-3 italic">RF02: Kcal diárias em repouso</p>
                 </div>
-                <div class="flex justify-end mt-auto">
-                    <button class="bg-orange-100 text-orange-700 hover:bg-orange-200 text-base font-semibold py-3 px-6 rounded-lg transition">
-                        Meu Diário <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
-                    <button class="bg-orange-100 text-orange-700 hover:bg-orange-200 text-base font-semibold py-3 px-6 rounded-lg ml-3 transition">
-                        Plano Alimentar <i class="fas fa-calendar-check ml-2"></i>
+
+                <div class="bg-white rounded-2xl shadow-sm p-6 text-center border border-gray-100 sm:col-span-2 lg:col-span-1">
+                    <p class="text-xs uppercase font-semibold text-gray-500">Gasto Diário (TDEE)</p>
+                    <div id="displayGasto" class="metric-value-display">--</div>
+                    <p class="text-gray-400 text-[10px] md:text-xs mt-3">Kcal totais recomendadas</p>
+                </div>
+            </section>
+
+            <!-- GRID DE RECURSOS -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                <!-- Reconhecimento de Prato -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 flex flex-col items-center border border-gray-100 text-center">
+                    <i class="fas fa-camera text-emerald-500 text-4xl mb-4"></i>
+                    <h3 class="font-bold text-gray-900 mb-2 leading-tight">Análise Inteligente (IA)</h3>
+                    <p class="text-gray-500 mb-6 text-sm">Escaneie pratos para estimativa de macros e frescor.</p>
+                    <button class="mt-auto w-full py-3 bg-emerald-100 text-emerald-700 font-semibold rounded-xl hover:bg-emerald-200 transition">
+                        Abrir Câmera
                     </button>
                 </div>
-            </div>
 
-        </section>
+                <!-- Metas e Evolução -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+                    <i class="fas fa-chart-line text-blue-500 text-4xl mb-4"></i>
+                    <h3 class="font-bold text-gray-900 mb-2 leading-tight">Metas e Evolução</h3>
+                    <p class="text-gray-500 text-sm mb-4">Seu progresso de peso e hidratação.</p>
+                    <div class="w-full bg-gray-100 rounded-full h-3 mb-4">
+                        <div class="bg-blue-500 h-3 rounded-full" style="width: 75%;"></div>
+                    </div>
+                    <button class="w-full py-3 bg-blue-100 text-blue-700 font-semibold rounded-xl hover:bg-blue-200 transition">
+                        Ver Gráficos
+                    </button>
+                </div>
+
+                <!-- Emergência -->
+                <div class="bg-red-50 rounded-2xl shadow-sm p-6 flex flex-col items-center border border-red-100 text-center">
+                    <i class="fas fa-map-location-dot text-red-500 text-4xl mb-4"></i>
+                    <h3 class="font-bold text-gray-900 mb-2">SOS Saúde</h3>
+                    <p class="text-gray-500 mb-6 text-sm italic">Localize UPAs em casos de intoxicação.</p>
+                    <button class="btn-danger-action m-0" style="background-color: #ef4444; color: white;">
+                        Abrir Mapa
+                    </button>
+                </div>
+                
+                 <!-- Diário Alimentar (Expande na LG) -->
+                 <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between border border-gray-100 gap-6">
+                    <div class="flex-1">
+                        <i class="fas fa-book-open text-orange-500 text-4xl mb-4"></i>
+                        <h3 class="font-bold text-gray-900 mb-2">Diário e Plano Alimentar</h3>
+                        <p class="text-gray-500 text-sm">Planeje sua dieta e registre suas refeições para atingir seus objetivos mais rápido.</p>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button class="px-6 py-3 bg-orange-100 text-orange-700 font-semibold rounded-xl hover:bg-orange-200">Meu Diário</button>
+                        <button class="px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 shadow-md shadow-orange-200">Plano Diário</button>
+                    </div>
+                </div>
+
+                <!-- Módulo LIBRAS -->
+                <div class="bg-green-50 rounded-2xl shadow-sm p-6 border border-green-100 flex flex-col items-center text-center">
+                    <i class="fas fa-hands-asl-interpreting text-green-600 text-4xl mb-4"></i>
+                    <h3 class="font-bold text-gray-900 mb-2">Módulo LIBRAS</h3>
+                    <p class="text-gray-500 text-sm mb-6 leading-tight">Informação acessível para todos em sinais.</p>
+                    <button class="mt-auto w-full py-3 bg-green-600 text-white font-semibold rounded-xl">Vídeos RF08</button>
+                </div>
+            </section>
+        </div>
     </main>
 
 <script>
-    // --- SUA LÓGICA ORIGINAL ABAIXO (MANTIDA INTEGRALMENTE) ---
+    // --- LÓGICA DE INTERFACE ---
+    function toggleSidebar() {
+        const side = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        side.classList.toggle('sidebar-hidden');
+        side.classList.toggle('sidebar-visible');
+        overlay.classList.toggle('active');
+    }
 
+    // --- SUA LÓGICA ORIGINAL ---
     window.onload = function() {
         const dados = localStorage.getItem('usuarioLogado');
         
         if (!dados) {
-            window.location.href = 'index.html'; // Adjust to inicio.html if it's your actual homepage now
+            window.location.href = 'index.html'; 
             return;
         }
 
         const user = JSON.parse(dados);
         
-        document.getElementById('displayNome').innerText = user.nome; // Mantive user.nome exatamente como no JS original. Se quiser MAIÚSCULAS use: user.nome.toUpperCase();
+        // Elementos permanecem com o mesmo ID
+        document.getElementById('displayNome').innerText = user.nome; 
         document.getElementById('displayIMC').innerText = user.imc;
         document.getElementById('displayTMB').innerText = user.tmb;
         document.getElementById('displayGasto').innerText = user.gasto;
@@ -230,7 +258,7 @@
 
     function sair() {
         localStorage.removeItem('usuarioLogado');
-        window.location.href = 'index.html'; // Redirect to your new landing page
+        window.location.href = 'index.html'; 
     }
 </script>
 
