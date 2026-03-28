@@ -4,67 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BSFM - Portal Nutricional</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fonte Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
         body { font-family: 'Inter', sans-serif; }
 
-        /* Fundo suave com a imagem da landing page */
         .bg-login {
-            background: linear-gradient(rgba(240, 253, 244, 0.8), rgba(209, 250, 229, 0.9)), 
+            background: linear-gradient(rgba(240, 253, 244, 0.7), rgba(209, 250, 229, 0.8)), 
                         url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=1920');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
 
-        /* Card estilo Soft/Glass */
         .soft-card {
             background: rgba(255, 255, 255, 0.98);
             border-radius: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(6, 78, 59, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(6, 78, 59, 0.12);
         }
 
-        /* ESTILO SOFT INPUT - É AQUI QUE O VISUAL FICA MODERNO */
+        /* INPUTS ESTILO CLEAN */
         .soft-input {
-            width: 100%;
-            background-color: #f3f4f6; /* Cinza bem clarinho */
-            border: 2px solid transparent;
-            padding: 1rem 1.2rem;
-            border-radius: 1rem;
-            font-size: 0.95rem;
-            color: #1f2937;
-            transition: all 0.3s ease;
-            outline: none !important;
+            @apply w-full bg-gray-100 border-2 border-transparent p-3.5 rounded-2xl text-sm text-gray-800 transition-all outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10;
         }
 
-        .soft-input:focus {
-            background-color: #ffffff;
-            border-color: #10b981; /* Verde esmeralda */
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-        }
-
-        /* Rótulos (Labels) */
         .label-style {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.5rem;
-            margin-left: 0.5rem;
+            @apply block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-2;
         }
 
-        /* Abas de troca (Switch) */
-        .tab-active {
-            background: #d1fae5;
-            color: #065f46;
-            font-weight: 600;
+        /* AJUSTE DAS TABS (Para funcionar com seu JS original) */
+        .tab-btn {
+            @apply flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 text-gray-400;
+        }
+        .tab-btn.active {
+            @apply bg-white text-emerald-700 shadow-sm ring-1 ring-black/5;
         }
 
         .form-section { display: none; }
@@ -76,112 +51,111 @@
         }
     </style>
 </head>
-<body class="bg-login min-h-screen flex items-center justify-center p-6">
+<body class="bg-login min-h-screen flex items-center justify-center p-4">
 
-<div class="soft-card w-full max-w-lg p-8 md:p-12">
+<div class="soft-card w-full max-w-lg p-8 md:p-12 overflow-hidden">
     
-    <!-- Cabeçalho -->
-    <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center bg-emerald-600 w-12 h-12 rounded-2xl shadow-lg mb-4 text-white text-xl">
-            <i class="fas fa-apple-whole"></i>
+    <!-- Header -->
+    <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center bg-emerald-600 w-12 h-12 rounded-2xl shadow-lg mb-4 text-white">
+            <i class="fas fa-apple-whole text-xl"></i>
         </div>
-        <h2 class="text-2xl font-extrabold text-emerald-900 tracking-tight">Portal BSFM</h2>
-        <p class="text-gray-400 text-xs font-medium uppercase tracking-widest mt-1">Sua saúde, nossa métrica</p>
+        <h2 class="text-3xl font-extrabold text-emerald-900 tracking-tight">Portal BSFM</h2>
+        <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Sua saúde, nossa métrica</p>
     </div>
 
-    <!-- Navegação Soft -->
-    <div class="flex bg-gray-100 rounded-2xl p-1 mb-8">
-        <button onclick="switchTab(event, 'cadastro')" id="btn-cadastro" class="flex-1 py-3 text-sm rounded-xl transition tab-active">Cadastrar</button>
-        <button onclick="switchTab(event, 'login')" id="btn-login" class="flex-1 py-3 text-sm rounded-xl transition text-gray-500">Entrar</button>
+    <!-- Navegação corrigida para o seu JS -->
+    <div class="flex bg-gray-100 rounded-[1.25rem] p-1.5 mb-10 border border-gray-200">
+        <button onclick="switchTab(event, 'cadastro')" id="tab-cadastro" class="tab-btn active">Cadastrar</button>
+        <button onclick="switchTab(event, 'login')" id="tab-login" class="tab-btn">Acessar Painel</button>
     </div>
 
-    <!-- FORMULÁRIO DE CADASTRO -->
-    <div id="cadastro" class="form-section active">
-        <div class="flex flex-col gap-5">
+    <!-- CADASTRO -->
+    <div id="cadastro" class="form-section active space-y-6">
+        <div class="grid grid-cols-1 gap-5">
             <div>
                 <label class="label-style">Nome Completo</label>
-                <input type="text" id="nome" class="soft-input" placeholder="Ex: Maria Souza">
+                <input type="text" id="nome" class="soft-input" placeholder="Seu nome">
             </div>
 
-            <div>
-                <label class="label-style">Seu melhor E-mail</label>
-                <input type="email" id="email" class="soft-input" placeholder="email@exemplo.com">
-            </div>
-
-            <div>
-                <label class="label-style">Defina uma Senha</label>
-                <input type="password" id="senha" class="soft-input" placeholder="••••••••">
-            </div>
-
-            <div>
-                <label class="label-style">Qual sua Idade?</label>
-                <input type="number" id="idade" class="soft-input" placeholder="Digite sua idade">
-            </div>
-
-            <div>
-                <label class="label-style">Sexo Biológico</label>
-                <select id="sexo" class="soft-input">
-                    <option value="Feminino">Feminino</option>
-                    <option value="Masculino">Masculino</option>
-                </select>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label class="label-style">Peso Atual (kg)</label>
-                    <input type="number" id="peso" class="soft-input" step="0.1" placeholder="Ex: 70">
+                    <label class="label-style">E-mail</label>
+                    <input type="email" id="email" class="soft-input" placeholder="seu@email.com">
                 </div>
                 <div>
-                    <label class="label-style">Sua Altura (m)</label>
-                    <input type="number" id="altura" class="soft-input" step="0.01" placeholder="Ex: 1.65">
+                    <label class="label-style">Senha</label>
+                    <input type="password" id="senha" class="soft-input" placeholder="••••••••">
                 </div>
             </div>
 
+            <div class="border-t border-gray-100 pt-5 mt-2">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="label-style">Idade</label>
+                        <input type="number" id="idade" class="soft-input">
+                    </div>
+                    <div>
+                        <label class="label-style">Sexo</label>
+                        <select id="sexo" class="soft-input px-2">
+                            <option value="Feminino">Fem</option>
+                            <option value="Masculino">Masc</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-style">Peso</label>
+                        <input type="number" id="peso" step="0.1" class="soft-input" placeholder="kg">
+                    </div>
+                    <div>
+                        <label class="label-style">Altura</label>
+                        <input type="number" id="altura" step="0.01" class="soft-input" placeholder="m">
+                    </div>
+                </div>
+            </div>
+
             <div>
-                <label class="label-style">Frequência de Atividade</label>
+                <label class="label-style">Nível de Atividade</label>
                 <select id="atividade" class="soft-input">
                     <option value="Sedentario">Sedentário (Pouca)</option>
                     <option value="Ativo">Ativo (Moderada)</option>
-                    <option value="Muito Ativo">Muito Ativo (Atleta)</option>
+                    <option value="Muito Ativo">Muito Ativo (Intensa)</option>
                 </select>
             </div>
-
-            <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95 mt-4">
-                Criar Minha Conta <i class="fas fa-arrow-right ml-2"></i>
-            </button>
         </div>
+
+        <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
+            Concluir Cadastro <i class="fas fa-check-circle"></i>
+        </button>
     </div>
 
-    <!-- FORMULÁRIO DE LOGIN -->
-    <div id="login" class="form-section">
-        <div class="flex flex-col gap-6">
-            <div class="flex justify-center mb-2">
-                <div class="bg-gray-50 p-6 rounded-full text-emerald-100 text-4xl shadow-inner">
-                    <i class="fas fa-user-circle"></i>
-                </div>
+    <!-- LOGIN -->
+    <div id="login" class="form-section space-y-6">
+        <div class="flex justify-center mb-4">
+            <div class="bg-emerald-50 w-20 h-20 flex items-center justify-center rounded-full text-emerald-600 text-4xl">
+                <i class="fas fa-user-circle"></i>
             </div>
-
+        </div>
+        <div class="space-y-4">
             <div>
-                <label class="label-style">E-mail</label>
-                <input type="email" id="login_email" class="soft-input" placeholder="Seu e-mail">
+                <label class="label-style">Seu E-mail</label>
+                <input type="email" id="login_email" class="soft-input" placeholder="email@exemplo.com">
             </div>
-
             <div>
                 <label class="label-style">Senha</label>
                 <input type="password" id="login_senha" class="soft-input" placeholder="••••••••">
             </div>
-
-            <button onclick="login()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95 mt-4">
-                Entrar no Portal <i class="fas fa-sign-in-alt ml-2"></i>
-            </button>
         </div>
+        <button onclick="login()" class="w-full bg-gray-950 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
+            Entrar no Portal <i class="fas fa-arrow-right"></i>
+        </button>
     </div>
 
-    <!-- Feedback (Aparecerá flutuando sobre o card) -->
-    <div id="resultado" class="hidden mt-6 p-4 rounded-2xl text-sm font-semibold text-center border"></div>
+    <!-- Feedback -->
+    <div id="resultado" class="mt-8 p-4 rounded-2xl text-xs font-bold border text-center transition-all duration-300 hidden"></div>
 
 </div>
-<!-- JAVASCRIPT ORIGINAL PRESERVADO -->
+
+<!-- JAVASCRIPT ORIGINAL SEM ALTERAÇÕES DE LÓGICA -->
 <script>
     const API_URL = 'https://bsfm-production.up.railway.app';
 
