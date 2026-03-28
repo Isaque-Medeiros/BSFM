@@ -209,52 +209,71 @@
         document.getElementById('resultado').style.display = 'none';
         document.getElementById('resultado').classList.add('hidden');
     }
+    // Substitua sua função exibirMensagem por esta:
+    function exibirMensagem(texto, fundo, cor, borda) {
+        const resDiv = document.getElementById('resultado');
+        if (!resDiv) return;
 
-    async function cadastrar() {
-    const dados = {
-        Nome: document.getElementById('nome').value,
-        Email: document.getElementById('email').value,
-        SenhaHash: document.getElementById('senha').value,
-        Idade: parseInt(document.getElementById('idade').value) || 0,
-        Peso: parseFloat(document.getElementById('peso').value) || 0,
-        Altura: parseFloat(document.getElementById('altura').value) || 0,
-        Sexo: document.getElementById('sexo').value,
-        TipoPessoa: document.getElementById('atividade').value,
-        AceitouTermos: true
-    };
-
-    if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-        exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
-        return;
+        // Remove a classe hidden (que esconde via CSS) e mostra o bloco
+        resDiv.classList.remove('hidden');
+        resDiv.style.display = "block";
+        
+        // Aplica as cores passadas
+        resDiv.style.backgroundColor = fundo;
+        resDiv.style.color = cor;
+        resDiv.style.borderColor = borda;
+        
+        // Insere o texto recebido do back-end
+        resDiv.innerHTML = texto;
     }
 
-    try {
-        const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        });
-        
-        // Espera a resposta do JSON
-        const data = await resp.json();
+    // Substitua sua função cadastrar por esta (Garante a ordem certa):
+    async function cadastrar() {
+        const dados = {
+            Nome: document.getElementById('nome').value,
+            Email: document.getElementById('email').value,
+            SenhaHash: document.getElementById('senha').value,
+            Idade: parseInt(document.getElementById('idade').value) || 0,
+            Peso: parseFloat(document.getElementById('peso').value) || 0,
+            Altura: parseFloat(document.getElementById('altura').value) || 0,
+            Sexo: document.getElementById('sexo').value,
+            TipoPessoa: document.getElementById('atividade').value,
+            AceitouTermos: true
+        };
 
-        if (resp.ok) {
-            // SUCESSO: Usa a mensagem que veio do C# (mensagem: "Conta criada com sucesso!")
-            exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
-            
-            // Limpa o formulário após 2 segundos
-            setTimeout(() => {
-                document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
-            }, 2000);
-        } else {
-            // ERRO (Ex: E-mail repetido): Usa a mensagem do C# (mensagem: "Este e-mail já existe")
-            exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
+            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
+            return;
         }
 
-    } catch (err) {
-        exibirMensagem("❌ Servidor em manutenção. Tente mais tarde.", "#fef2f2", "#991b1b", "#fee2e2");
+        try {
+            const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            
+            // Aqui está o ponto crucial: se o servidor demorar ou falhar, precisamos esperar o JSON
+            const data = await resp.json();
+
+            if (resp.ok) {
+                // SUCESSO: O status é 200 (Mostra o fundo verde)
+                // Aqui usamos data.mensagem que definimos no C#
+                exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
+                
+                // Limpa o form após sucesso
+                setTimeout(() => {
+                    document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
+                }, 3000);
+            } else {
+                // ERRO (E-mail repetido ou erro do servidor): Mostra o fundo laranja/vermelho
+                exibirMensagem(`⚠️ ${data.mensagem || "Não foi possível cadastrar."}`, "#fffbeb", "#92400e", "#fef3c7");
+            }
+        } catch (err) {
+            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
+            console.error("Erro no Fetch:", err);
+        }
     }
-}
 
 async function login() {
     const dados = {
@@ -282,22 +301,6 @@ async function login() {
     } catch (err) {
         exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
     }
-
-    function exibirMensagem(texto, fundo, cor, borda) {
-    const resDiv = document.getElementById('resultado');
-    
-    // 1. Remove classes de invisibilidade do Tailwind e limpa estilos anteriores
-    resDiv.classList.remove('hidden');
-    resDiv.style.display = "block"; // Força o display caso o Tailwind esteja bloqueando
-    
-    // 2. Aplica as cores dinâmicas
-    resDiv.style.backgroundColor = fundo;
-    resDiv.style.color = cor;
-    resDiv.style.borderColor = borda;
-    
-    // 3. Insere o texto
-    resDiv.innerHTML = texto;
-}
 }
 </script>
 
