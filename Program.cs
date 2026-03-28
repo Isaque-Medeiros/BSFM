@@ -42,30 +42,28 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
     
     var email = usuarioVindoDoJs.Email?.Trim().ToLower();
-    if (db.Usuarios.Any(u => u.Email.ToLower() == email))
-        return Results.Json(new { mensagem = "Este e-mail já existe!" }, statusCode: 400);
+    
+    // Se o banco demorar para responder o ANY, o Railway pode dar timeout.
+    // Usamos o AsNoTracking para consulta rápida
+    if (db.Usuarios.AsNoTracking().Any(u => u.Email.ToLower() == email))
+        return Results.Json(new { mensagem = "Este e-mail já possui conta!" }, statusCode: 400);
 
-    // Gerar código aleatório
     string token = new Random().Next(100000, 999999).ToString();
     
-    // Configura o usuário mas deixa BLOQUEADO
     usuarioVindoDoJs.TokenVerificacao = token;
     usuarioVindoDoJs.EmailVerificado = false; 
     usuarioVindoDoJs.Email = email;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
+    
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
     
     db.Usuarios.Add(usuarioVindoDoJs);
-    db.SaveChanges();
+    db.SaveChanges(); // Persiste no banco primeiro
 
-    // DISPARA O EMAIL (Mailtrap não dá Timeout como o Gmail)
-   _ = Task.Run(() => 
-{
-    try {
-        ClassesBSFM.EmailService.EnviarToken(email ?? "", token);
-    } catch (Exception ex) {
-        Console.WriteLine("Erro de background: " + ex.Message);
-    }
+    // ENVIO SEGURO (Dispara e já libera o frontend, sem travar na conexão com o Mailtrap)
+    EmailService.EnviarToken(email ?? "", token);
+
+    return Results.Ok(new { mensagem = "Tudo certo! Verifique seu Mailtrap para ativar." });
 });
 
     return Results.Ok(new { mensagem = "Usuário pré-cadastrado! Verifique seu e-mail no Mailtrap." });

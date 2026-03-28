@@ -253,50 +253,49 @@
     }
 
     async function cadastrar() {
-        const emailInput = document.getElementById('email').value;
-        const dados = {
-            Nome: document.getElementById('nome').value,
-            Email: emailInput,
-            SenhaHash: document.getElementById('senha').value,
-            Idade: parseInt(document.getElementById('idade').value) || 0,
-            Peso: parseFloat(document.getElementById('peso').value) || 0,
-            Altura: parseFloat(document.getElementById('altura').value) || 0,
-            Sexo: document.getElementById('sexo').value,
-            TipoPessoa: document.getElementById('atividade').value,
-            AceitouTermos: true
-        };
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    
+    // UI FEEDBACK: Mostra que está carregando para o usuário não se desesperar
+    btn.innerHTML = `<i class='fas fa-circle-notch fa-spin'></i> Criando conta...`;
+    btn.disabled = true;
 
-        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            exibirMensagem("⚠️ Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
+    const dados = {
+        Nome: document.getElementById('nome').value,
+        Email: document.getElementById('email').value,
+        SenhaHash: document.getElementById('senha').value,
+        Idade: parseInt(document.getElementById('idade').value) || 0,
+        Peso: parseFloat(document.getElementById('peso').value) || 0,
+        Altura: parseFloat(document.getElementById('altura').value) || 0,
+        Sexo: document.getElementById('sexo').value,
+        TipoPessoa: document.getElementById('atividade').value,
+        AceitouTermos: true
+    };
 
-        try {
-            const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            
+    try {
+        const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+
+        if (resp.ok) {
+            emailRegistrado = dados.Email;
+            exibirMensagem("🚀 Perfil criado! Verifique o código no seu e-mail.", "#f0fdf4", "#166534", "#dcfce7");
+            setTimeout(() => switchTab(null, 'verificacao-token'), 2000);
+        } else {
             const data = await resp.json();
-
-            if (resp.ok) {
-                emailRegistrado = emailInput; // Guarda para usar na verificação
-                exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
-                
-                // Redireciona para a tela de Token em 1.5s
-                setTimeout(() => {
-                    document.getElementById('nav-tabs').classList.add('hidden');
-                    switchTab(null, 'verificacao-token');
-                }, 1500);
-
-            } else {
-                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
-            }
-        } catch (err) {
-            exibirMensagem("❌ Servidor indisponível no momento.", "#fef2f2", "#991b1b", "#fee2e2");
+            exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
+    } catch (err) {
+        exibirMensagem("❌ Erro de conexão. Verifique se o servidor está ativo.", "#fef2f2", "#991b1b", "#fee2e2");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
+}
+
 
     // NOVA FUNÇÃO: VERIFICAR TOKEN
     async function verificarToken() {

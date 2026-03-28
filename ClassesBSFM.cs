@@ -127,44 +127,47 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-     public class EmailService 
+    public class EmailService 
+{
+    public static void EnviarToken(string emailDestino, string token) 
     {
-        public static void EnviarToken(string emailDestino, string token) 
-        {
-            var mensagem = new MimeMessage();
-            mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
-            mensagem.To.Add(new MailboxAddress("", emailDestino));
-            mensagem.Subject = "🔐 Código de Ativação BSFM";
+        // Rodamos tudo em segundo plano absoluto para não travar o cadastro
+        Task.Run(() => {
+            try {
+                var mensagem = new MimeMessage();
+                mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
+                mensagem.To.Add(new MailboxAddress("", emailDestino));
+                mensagem.Subject = "🔐 Código de Ativação BSFM";
 
-            mensagem.Body = new TextPart("html") {
-                Text = $"<div style='font-family:sans-serif;'><h2>Código: <b>{token}</b></h2></div>"
-            };
+                mensagem.Body = new TextPart("html") {
+                    Text = $@"
+                        <div style='font-family: sans-serif; padding: 20px; color: #333;'>
+                            <h2 style='color: #059669;'>Olá! Seja bem-vindo ao BSFM.</h2>
+                            <p>Para ativar sua conta e começar sua jornada nutricional, utilize o código abaixo:</p>
+                            <div style='background: #f0fdf4; padding: 20px; border-radius: 10px; text-align: center;'>
+                                <span style='font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #166534;'>{token}</span>
+                            </div>
+                            <p style='margin-top: 20px; font-size: 12px; color: #666;'>Se você não solicitou este código, por favor desconsidere.</p>
+                        </div>"
+                };
 
-            using (var client = new SmtpClient()) 
-            {
-                try {
-                    // 1. Aumentamos o Timeout para 1 minuto (Railway precisa disso às vezes)
-                    client.Timeout = 60000; 
-
-                    // 2. Ignora erros de certificado SSL que acontecem em servidores Linux/Railway
+                using (var client = new SmtpClient()) 
+                {
+                    client.Timeout = 15000; // 15 segundos máximo
                     client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                    // 3. USA PORTA 465 com SSL Direto (Inicia a conversa mais rápido que a 2525 ou 587)
-                    client.Connect("sandbox.smtp.mailtrap.io", 465, SecureSocketOptions.SslOnConnect);
-
+                    // PORTA 587 é muito mais estável no Railway do que a 465
+                    client.Connect("sandbox.smtp.mailtrap.io", 587, SecureSocketOptions.StartTls);
                     client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
                     
                     client.Send(mensagem);
                     client.Disconnect(true);
-                    Console.WriteLine("[LOG SUCESSO] E-mail enviado ao Mailtrap!");
-                }
-                catch (Exception ex) {
-                    // Isso vai aparecer no seu log do Railway se falhar
-                    Console.WriteLine($"[ERRO FATAL EMAIL]: {ex.Message}");
-                    if (ex.InnerException != null) 
-                        Console.WriteLine($"[DETALHE]: {ex.InnerException.Message}");
+                    Console.WriteLine($"[EMAIL] Enviado para {emailDestino}");
                 }
             }
-        }
+            catch (Exception ex) {
+                Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
+            }
+        });
     }
 }
