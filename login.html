@@ -211,7 +211,6 @@
     }
 
     async function cadastrar() {
-    const resDiv = document.getElementById('resultado');
     const dados = {
         Nome: document.getElementById('nome').value,
         Email: document.getElementById('email').value,
@@ -236,20 +235,24 @@
             body: JSON.stringify(dados)
         });
         
+        // Espera a resposta do JSON
         const data = await resp.json();
 
         if (resp.ok) {
-            // SUCESSO: O servidor retornou 200 OK
+            // SUCESSO: Usa a mensagem que veio do C# (mensagem: "Conta criada com sucesso!")
             exibirMensagem(`✅ ${data.mensagem}`, "#f0fdf4", "#166534", "#dcfce7");
-            // Limpa os campos após o sucesso
-            document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
+            
+            // Limpa o formulário após 2 segundos
+            setTimeout(() => {
+                document.querySelectorAll('#cadastro input').forEach(i => i.value = '');
+            }, 2000);
         } else {
-            // ERRO: O e-mail já existe ou outro problema (Status 400)
+            // ERRO (Ex: E-mail repetido): Usa a mensagem do C# (mensagem: "Este e-mail já existe")
             exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
         }
 
     } catch (err) {
-        exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
+        exibirMensagem("❌ Servidor em manutenção. Tente mais tarde.", "#fef2f2", "#991b1b", "#fee2e2");
     }
 }
 
@@ -279,6 +282,22 @@ async function login() {
     } catch (err) {
         exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
     }
+
+    function exibirMensagem(texto, fundo, cor, borda) {
+    const resDiv = document.getElementById('resultado');
+    
+    // 1. Remove classes de invisibilidade do Tailwind e limpa estilos anteriores
+    resDiv.classList.remove('hidden');
+    resDiv.style.display = "block"; // Força o display caso o Tailwind esteja bloqueando
+    
+    // 2. Aplica as cores dinâmicas
+    resDiv.style.backgroundColor = fundo;
+    resDiv.style.color = cor;
+    resDiv.style.borderColor = borda;
+    
+    // 3. Insere o texto
+    resDiv.innerHTML = texto;
+}
 }
 </script>
 
