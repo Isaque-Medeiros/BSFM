@@ -126,53 +126,49 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    public class EmailService 
-    {
-        public static void EnviarToken(string emailDestino, string token) 
+    namespace ClassesBSFM
+{
+    // ... Mantenha suas outras classes (Usuario, CalcularNutricional, etc) aqui em cima ...
+
+        public class EmailService 
         {
-            var mensagem = new MimeMessage();
-            mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
-            mensagem.To.Add(new MailboxAddress("", emailDestino));
-            mensagem.Subject = "Código de Ativação BSFM";
+            public static void EnviarToken(string emailDestino, string token) 
+            {
+                var mensagem = new MimeMessage();
+                // No Mailtrap você pode usar qualquer e-mail no "From"
+                mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
+                mensagem.To.Add(new MailboxAddress("", emailDestino));
+                mensagem.Subject = "🔐 Código de Ativação BSFM";
 
-            mensagem.Body = new TextPart("html") {
-                Text = $@"
-                <div style='font-family: sans-serif; background-color: #f9f9f9; padding: 20px;'>
-                    <div style='max-width: 500px; margin: auto; background: white; padding: 30px; border-radius: 10px; border: 1px solid #ddd;'>
-                        <h2 style='color: #059669; text-align: center;'>Bem-vindo ao BSFM!</h2>
-                        <p style='color: #4b5563; text-align: center;'>Seu código de ativação é:</p>
-                        <div style='background: #ecfdf5; border: 2px dashed #10b981; padding: 15px; font-size: 30px; font-weight: bold; text-align: center; color: #065f46; letter-spacing: 8px;'>
-                            {token}
+                mensagem.Body = new TextPart("html") {
+                    Text = $@"
+                    <div style='font-family: sans-serif; background-color: #f4fdf4; padding: 30px; border-radius: 15px;'>
+                        <div style='max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #d1fae5;'>
+                            <h2 style='color: #059669; text-align: center; margin-bottom: 20px;'>Bem-vindo ao BSFM!</h2>
+                            <p style='color: #4b5563; font-size: 16px; text-align: center;'>Para concluir seu cadastro e ativar sua conta, utilize o código abaixo:</p>
+                            <div style='background: #ecfdf5; border: 2px dashed #10b981; padding: 20px; font-size: 32px; font-weight: bold; text-align: center; color: #065f46; letter-spacing: 10px; margin: 25px 0; border-radius: 12px;'>
+                                {token}
+                            </div>
+                            <p style='color: #9ca3af; font-size: 12px; text-align: center;'>Este é um código temporário para sua segurança.</p>
                         </div>
-                    </div>
-                </div>"
-            };
+                    </div>"
+                };
 
-            using var client = new SmtpClient();
-            try {
-                // AJUSTE PARA EVITAR TIMEOUT NO RAILWAY:
-                // 1. Aumentamos o timeout para 20 segundos
-                client.Timeout = 30000;
-
-                // 2. Forçamos o uso apenas de IPv4 para evitar erro de rede no Google
-                // Isso resolve 90% dos problemas de "Timed Out" em servidores de nuvem
-                client.LocalDomain = "localhost";
-
-                // 3. Ignora validação de certificado se o Railway não tiver o certificado do Google na raiz
-                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
-                // 4. Tenta a conexão com as 16 letras (SEM ESPAÇOS)
-                client.Connect("smtp.gmail.com", 465, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("isaquemedeiros190406@gmail.com", "nuxogsdedzxknfkd");
-                
-                client.Send(mensagem);
-                client.Disconnect(true);
-                Console.WriteLine("[LOG] E-mail enviado com sucesso para " + emailDestino);
-            }
-            catch (Exception ex) {
-                Console.WriteLine($"[ERRO CRÍTICO E-MAIL]: {ex.Message}");
-                if (ex.InnerException != null) 
-                    Console.WriteLine($"[DETALHE]: {ex.InnerException.Message}");
+                using (var client = new SmtpClient()) 
+                {
+                    try {
+                        // CONFIGURAÇÕES DO SEU MAILTRAP:
+                        client.Connect("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
+                        client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
+                        
+                        client.Send(mensagem);
+                        client.Disconnect(true);
+                        Console.WriteLine($"[MAILTRAP] E-mail enviado com sucesso para: {emailDestino}");
+                    }
+                    catch (Exception ex) {
+                        Console.WriteLine($"[ERRO MAILTRAP]: {ex.Message}");
+                    }
+                }
             }
         }
     }

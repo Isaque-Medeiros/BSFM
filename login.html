@@ -329,12 +329,16 @@
             exibirMensagem("❌ Erro ao validar código.", "#fef2f2", "#991b1b", "#fee2e2");
         }
     }
-
     async function login() {
         const dados = {
             Email: document.getElementById('login_email').value,
             Senha: document.getElementById('login_senha').value
         };
+
+        if(!dados.Email || !dados.Senha) {
+            exibirMensagem("⚠️ Preencha todos os campos para entrar.", "#fffbeb", "#92400e", "#fef3c7");
+            return;
+        }
 
         try {
             const resp = await fetch(`${API_URL}/login`, {
@@ -346,13 +350,28 @@
             const data = await resp.json();
 
             if (resp.ok) {
+                // LOGIN SUCESSO (Status 200)
                 localStorage.setItem('usuarioLogado', JSON.stringify(data));
                 window.location.href = 'dashboard.html'; 
-            } else {
-                exibirMensagem(`⚠️ ${data.mensagem}`, "#fffbeb", "#92400e", "#fef3c7");
+            } 
+            else if (resp.status === 401) {
+                // CONTA NÃO ATIVADA (Status 401)
+                // Salva o email na memória e sugere ir para a tela de token se você quiser
+                emailRegistrado = dados.Email; 
+                exibirMensagem(data.mensagem, "#fffbeb", "#92400e", "#fef3c7");
+                
+                // Opcional: Mostrar o botão de verificação após 3 segundos
+                setTimeout(() => {
+                    document.getElementById('nav-tabs').classList.add('hidden');
+                    switchTab(null, 'verificacao-token');
+                }, 3000);
+            }
+            else {
+                // ERRO COMUM (E-mail/Senha errados)
+                exibirMensagem(`⚠️ ${data.mensagem}`, "#fef2f2", "#991b1b", "#fee2e2");
             }
         } catch (err) {
-            exibirMensagem("❌ Erro de conexão.", "#fef2f2", "#991b1b", "#fee2e2");
+            exibirMensagem("❌ Erro de conexão com o portal.", "#fef2f2", "#991b1b", "#fee2e2");
         }
     }
 </script>

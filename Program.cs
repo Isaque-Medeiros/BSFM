@@ -36,7 +36,7 @@ using (var scope = app.Services.CreateScope()) {
 app.MapGet("/", (IWebHostEnvironment env) => 
     Results.File(Path.Combine(env.ContentRootPath, "index.html"), "text/html"));
 
-// CADASTRO COM TRAVA DE EMAIL
+// ROTA DE CADASTRO
 app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
@@ -45,10 +45,12 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     if (db.Usuarios.Any(u => u.Email.ToLower() == email))
         return Results.Json(new { mensagem = "Este e-mail já existe!" }, statusCode: 400);
 
+    // Gerar código aleatório
     string token = new Random().Next(100000, 999999).ToString();
+    
+    // Configura o usuário mas deixa BLOQUEADO
     usuarioVindoDoJs.TokenVerificacao = token;
-    usuarioVindoDoJs.EmailVerificado = false; // Fica travado aqui!
-
+    usuarioVindoDoJs.EmailVerificado = false; 
     usuarioVindoDoJs.Email = email;
     usuarioVindoDoJs.SenhaHash = BCrypt.Net.BCrypt.HashPassword(usuarioVindoDoJs.SenhaHash);
     new CalcularNutricional().RegistrarCalculos(usuarioVindoDoJs);
@@ -56,13 +58,14 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
 
-    // Envia o e-mail em background
+    // DISPARA O EMAIL (Mailtrap não dá Timeout como o Gmail)
     _ = Task.Run(() => EmailService.EnviarToken(email, token));
 
-    return Results.Ok(new { mensagem = "Verifique seu e-mail para ativar a conta." });
+    return Results.Ok(new { mensagem = "Usuário pré-cadastrado! Verifique seu e-mail no Mailtrap." });
 });
 
-// --- NOVA ROTA: VERIFICAR TOKEN ---
+
+// NOVA ROTA: ATIVAR CONTA VIA TOKEN
 app.MapPost("/verificar-token", (TokenRequest req) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
@@ -70,31 +73,45 @@ app.MapPost("/verificar-token", (TokenRequest req) => {
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == req.Email.ToLower());
 
     if (user != null && user.TokenVerificacao == req.Token) {
-        user.EmailVerificado = true; // AGORA A CONTA ESTÁ ATIVA
+        user.EmailVerificado = true; // CONTA ATIVA!
         user.TokenVerificacao = null; 
         db.SaveChanges();
-        return Results.Ok(new { mensagem = "Conta ativada com sucesso!" });
+        return Results.Ok(new { mensagem = "Sua conta foi ativada com sucesso! Faça login." });
     }
     
-    return Results.Json(new { mensagem = "Código inválido." }, statusCode: 400);
+    return Results.Json(new { mensagem = "Código de ativação inválido." }, statusCode: 400);
 });
 
-// --- ROTA DE LOGIN (Atualizada para checar se está verificado) ---
 app.MapPost("/login", (LoginDTO dadosLogin) => {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+
+    // 1. Busca o usuário pelo e-mail
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
     
-    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash)) {
+    // 2. Verifica se o usuário existe e se a senha (BCrypt) bate
+    if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash))
+    {
+        // --- A NOVA TRAVA DE SEGURANÇA ---
         if (!user.EmailVerificado)
-            return Results.Json(new { mensagem = "Aguardando confirmação de e-mail." }, statusCode: 401);
+        {
+            // Retorna Status 401 (Não autorizado) informando que falta o token
+            return Results.Json(new { mensagem = "⚠️ Sua conta ainda não foi ativada. Verifique o código no seu e-mail (Mailtrap)." }, statusCode: 401);
+        }
 
-        return Results.Ok(new { nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal });
+        // 3. LOGIN COM SUCESSO: Envia os dados para o dashboard
+        return Results.Ok(new { 
+            nome = user.Nome, 
+            imc = user.IMC,
+            tmb = user.TMB,
+            gasto = user.GastoTotal,
+            objetivo = user.TipoPessoa 
+        }); 
     }
     
-    return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
+    // Erro de e-mail ou senha
+    return Results.Json(new { mensagem = "❌ E-mail ou senha incorretos." }, statusCode: 400);
 });
-
 app.Run();
 
 public record LoginDTO(string Email, string Senha);
