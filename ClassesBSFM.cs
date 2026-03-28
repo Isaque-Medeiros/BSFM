@@ -81,7 +81,7 @@ namespace ClassesBSFM
         public int ID { get; set; }
 
         public string NomeRefeição { get; set; } = string.Empty;
-        public string Categoria { get; set; } 
+        public string Categoria { get; set; } = string.Empty; // Valor inicial
         public string Ingredientes { get; set; } = string.Empty;
         public double Calorias { get; set; }
         public double Proteínas { get; set; }
@@ -137,7 +137,7 @@ namespace ClassesBSFM
             {
                 var mensagem = new MimeMessage();
                 // No Mailtrap você pode usar qualquer e-mail no "From"
-                mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
+                mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
                 mensagem.To.Add(new MailboxAddress("", emailDestino));
                 mensagem.Subject = "🔐 Código de Ativação BSFM";
 
