@@ -59,7 +59,14 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     db.SaveChanges();
 
     // DISPARA O EMAIL (Mailtrap não dá Timeout como o Gmail)
-    _ = Task.Run(() => EmailService.EnviarToken(email, token));
+   _ = Task.Run(() => 
+{
+    try {
+        ClassesBSFM.EmailService.EnviarToken(email ?? "", token);
+    } catch (Exception ex) {
+        Console.WriteLine("Erro de background: " + ex.Message);
+    }
+});
 
     return Results.Ok(new { mensagem = "Usuário pré-cadastrado! Verifique seu e-mail no Mailtrap." });
 });

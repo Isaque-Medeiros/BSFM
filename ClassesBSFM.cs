@@ -127,33 +127,44 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    public class EmailService 
+     public class EmailService 
+    {
+        public static void EnviarToken(string emailDestino, string token) 
         {
-            public static void EnviarToken(string emailDestino, string token) 
+            var mensagem = new MimeMessage();
+            mensagem.From.Add(new MailboxAddress("Portal BSFM", "contato@bsfmnutri.org.br"));
+            mensagem.To.Add(new MailboxAddress("", emailDestino));
+            mensagem.Subject = "🔐 Código de Ativação BSFM";
+
+            mensagem.Body = new TextPart("html") {
+                Text = $"<div style='font-family:sans-serif;'><h2>Código: <b>{token}</b></h2></div>"
+            };
+
+            using (var client = new SmtpClient()) 
             {
-                var mensagem = new MimeMessage();
-                mensagem.From.Add(new MailboxAddress("Portal BSFM", "isaquemedeiros190406@gmail.com"));
-                mensagem.To.Add(new MailboxAddress("", emailDestino));
-                mensagem.Subject = "🔐 Código de Ativação BSFM";
+                try {
+                    // 1. Aumentamos o Timeout para 1 minuto (Railway precisa disso às vezes)
+                    client.Timeout = 60000; 
 
-                mensagem.Body = new TextPart("html") {
-                    Text = $"<p>Seu código é: <b>{token}</b></p>"
-                };
+                    // 2. Ignora erros de certificado SSL que acontecem em servidores Linux/Railway
+                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                // O 'using' agora sabe exatamente que é o SmtpClient do MailKit
-                using (var client = new SmtpClient()) 
-                {
-                    try {
-                        client.Timeout = 10000;
-                        client.Connect("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
-                        client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
-                        client.Send(mensagem);
-                        client.Disconnect(true);
-                    }
-                    catch (Exception ex) {
-                        Console.WriteLine($"[ERRO MAILTRAP]: {ex.Message}");
-                    }
+                    // 3. USA PORTA 465 com SSL Direto (Inicia a conversa mais rápido que a 2525 ou 587)
+                    client.Connect("sandbox.smtp.mailtrap.io", 465, SecureSocketOptions.SslOnConnect);
+
+                    client.Authenticate("2f43feed9ca5d6", "27f292915287b6");
+                    
+                    client.Send(mensagem);
+                    client.Disconnect(true);
+                    Console.WriteLine("[LOG SUCESSO] E-mail enviado ao Mailtrap!");
+                }
+                catch (Exception ex) {
+                    // Isso vai aparecer no seu log do Railway se falhar
+                    Console.WriteLine($"[ERRO FATAL EMAIL]: {ex.Message}");
+                    if (ex.InnerException != null) 
+                        Console.WriteLine($"[DETALHE]: {ex.InnerException.Message}");
                 }
             }
         }
     }
+}
