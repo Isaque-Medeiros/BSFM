@@ -7,8 +7,8 @@ using MailKit.Security;
 // RESOLUÇÃO DO CONFLITO: Dizemos explicitamente para usar o SmtpClient do MailKit
 using SmtpClient = MailKit.Net.Smtp.SmtpClient; 
 using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
+using System.Net.Http.Json; // Importante para o JsonContent
+using System.Net.Http.Headers;
 
 namespace ClassesBSFM
 {
@@ -128,49 +128,63 @@ namespace ClassesBSFM
 
  public class EmailService 
 {
-    // Crie um HttpClient estático para ser ultra-rápido
     private static readonly HttpClient _httpClient = new HttpClient();
+
+    // DADOS REAIS FORNECIDOS POR VOCÊ
+    private const string apiToken = "78c16b8231ead79b43ffaf44838aab1a"; 
+    private const string inboxId = "4499518"; 
 
     public static void EnviarToken(string emailDestino, string token) 
     {
+        // _ = Descarta a Task para rodar em background liso
         _ = Task.Run(async () => {
             try {
-                // Aqui montamos o corpo do e-mail no formato que a API do Mailtrap espera
+                // Endpoint oficial de Sandbox do Mailtrap via API
+                string url = $"https://sandbox.api.mailtrap.io/api/send/{inboxId}";
+
+                // Payload organizado no padrão que a API deles exige
                 var payload = new {
-                    to = new[] { new { email = emailDestino, name = "Usuario" } },
-                    from = new { email = "contato@bsfmnutri.io", name = "Portal BSFM" },
+                    to = new[] { 
+                        new { email = emailDestino, name = "Usuario BSFM" } 
+                    },
+                    from = new { 
+                        email = "portal@bsfm.io", 
+                        name = "BSFM Nutri" 
+                    },
                     subject = "🔐 Código de Ativação BSFM",
-                    html = $@"<div style='font-family:sans-serif;background:#f0fdf4;padding:40px;border-radius:20px;text-align:center;'>
-                                <h2 style='color:#065f46'>Seu código BSFM</h2>
-                                <h1 style='color:#166534;font-size:32px;letter-spacing:5px;'>{token}</h1>
-                             </div>"
+                    html = $@"
+                    <div style='font-family: sans-serif; background-color: #f0fdf4; padding: 40px; text-align: center; border-radius: 20px;'>
+                        <h1 style='color: #065f46; font-size: 24px; margin-bottom: 10px;'>Portal Nutricional BSFM</h1>
+                        <p style='color: #374151; font-size: 16px;'>Use o código de ativação para liberar seu acesso:</p>
+                        <div style='background: #ffffff; padding: 25px; border-radius: 15px; display: inline-block; border: 2px solid #d1fae5; margin: 20px 0;'>
+                            <span style='font-size: 36px; font-weight: bold; color: #166534; letter-spacing: 8px;'>{token}</span>
+                        </div>
+                        <p style='color: #64748b; font-size: 12px;'>Se você não solicitou este e-mail, por favor desconsidere.</p>
+                    </div>"
                 };
 
-                // No Mailtrap Sandbox, enviamos para este endpoint especial
-                var url = "https://send.api.mailtrap.io/api/send";
-
-                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                // Monta a requisição HTTP
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
                 
-                // --- MUITO IMPORTANTE ---
-                // Para API, você usa um "Api-Token" que está na sua tela de integração do Mailtrap
-                // Ele costuma estar na aba "API" (e não na aba SMTP). 
-                // Se o seu username era "2f43feed9ca5d6", seu token de API é o mesmo para teste.
-                request.Headers.Add("Api-Token", "2f43feed9ca5d627f292915287b6933"); 
-                // (O token costuma ser a junção das credenciais ou gerado na aba API)
-
+                // AUTORIZAÇÃO: É aqui que usamos o seu Token de API
+                request.Headers.Add("Api-Token", apiToken);
+                
+                // SERIALIZA O JSON
                 request.Content = JsonContent.Create(payload);
 
+                // Envia pela porta 443 (Internet comum), fugindo do bloqueio SMTP
                 var response = await _httpClient.SendAsync(request);
 
                 if (response.IsSuccessStatusCode) {
-                    Console.WriteLine($"[API SUCESSO] E-mail enviado via HTTP para {emailDestino}");
+                    Console.WriteLine($"[API MAILTRAP] Código {token} entregue na Sandbox com sucesso!");
                 } else {
-                    var erro = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[API ERRO]: {erro}");
+                    var erroMsg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[API MAILTRAP ERRO] {(int)response.StatusCode} - {erroMsg}");
                 }
             }
             catch (Exception ex) {
-                Console.WriteLine($"[API EXCEPTION]: {ex.Message}");
+                // Se o problema persistir, esse log vai dizer o porquê no Railway
+                Console.WriteLine($"[API MAILTRAP FATAL]: {ex.Message}");
             }
         });
     }
