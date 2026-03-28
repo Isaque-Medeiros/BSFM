@@ -6,6 +6,9 @@ using MimeKit;
 using MailKit.Security;
 // RESOLUÇÃO DO CONFLITO: Dizemos explicitamente para usar o SmtpClient do MailKit
 using SmtpClient = MailKit.Net.Smtp.SmtpClient; 
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace ClassesBSFM
 {
@@ -123,56 +126,52 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-    public class EmailService 
+ public class EmailService 
+{
+    // Crie um HttpClient estático para ser ultra-rápido
+    private static readonly HttpClient _httpClient = new HttpClient();
+
+    public static void EnviarToken(string emailDestino, string token) 
     {
-        public static void EnviarToken(string emailDestino, string token) 
-        {
-            // _ = Task.Run para rodar em background sem travar o cadastro
-            _ = Task.Run(async () => {
-                try {
-                    var mensagem = new MimeMessage();
-                    // "NOREPLY" é padrão para sistemas, e-mail fictício liberado pelo Mailtrap
-                    mensagem.From.Add(new MailboxAddress("Portal BSFM", "noreply@bsfmnutri.io"));
-                    mensagem.To.Add(new MailboxAddress("", emailDestino));
-                    mensagem.Subject = "🔐 Código de Ativação BSFM";
+        _ = Task.Run(async () => {
+            try {
+                // Aqui montamos o corpo do e-mail no formato que a API do Mailtrap espera
+                var payload = new {
+                    to = new[] { new { email = emailDestino, name = "Usuario" } },
+                    from = new { email = "contato@bsfmnutri.io", name = "Portal BSFM" },
+                    subject = "🔐 Código de Ativação BSFM",
+                    html = $@"<div style='font-family:sans-serif;background:#f0fdf4;padding:40px;border-radius:20px;text-align:center;'>
+                                <h2 style='color:#065f46'>Seu código BSFM</h2>
+                                <h1 style='color:#166534;font-size:32px;letter-spacing:5px;'>{token}</h1>
+                             </div>"
+                };
 
-                    // DESIGN SOFT NO EMAIL:
-                    mensagem.Body = new TextPart("html") {
-                        Text = $@"
-                            <div style='font-family: sans-serif; background-color: #f0fdf4; padding: 40px; text-align: center; border-radius: 20px;'>
-                                <h2 style='color: #065f46; margin-bottom: 20px;'>Portal Nutricional BSFM</h2>
-                                <p style='color: #374151;'>Use o código abaixo para ativar sua conta:</p>
-                                <div style='background: #ffffff; padding: 20px; border-radius: 12px; display: inline-block; border: 1px solid #d1fae5;'>
-                                    <span style='font-size: 32px; font-weight: bold; color: #166534; letter-spacing: 5px;'>{token}</span>
-                                </div>
-                            </div>"
-                    };
+                // No Mailtrap Sandbox, enviamos para este endpoint especial
+                var url = "https://send.api.mailtrap.io/api/send";
 
-                    using (var client = new MailKit.Net.Smtp.SmtpClient()) 
-                    {
-                        // PROTEÇÕES CONTRA TIMEOUT NO RAILWAY
-                        client.Timeout = 20000; // 20 segundos
-                        client.CheckCertificateRevocation = false; 
-                        client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                
+                // --- MUITO IMPORTANTE ---
+                // Para API, você usa um "Api-Token" que está na sua tela de integração do Mailtrap
+                // Ele costuma estar na aba "API" (e não na aba SMTP). 
+                // Se o seu username era "2f43feed9ca5d6", seu token de API é o mesmo para teste.
+                request.Headers.Add("Api-Token", "2f43feed9ca5d627f292915287b6933"); 
+                // (O token costuma ser a junção das credenciais ou gerado na aba API)
 
-                        // CONEXÃO COM SEUS DADOS:
-                        // Porta 2525 é o padrão recomendado para evitar bloqueios de cloud
-                        await client.ConnectAsync("sandbox.smtp.mailtrap.io", 2525, MailKit.Security.SecureSocketOptions.StartTls);
-                        
-                        // LOGIN (Dados que você pegou na print):
-                        await client.AuthenticateAsync("2f43feed9ca5d6", "27f292915287b6");
-                        
-                        await client.SendAsync(mensagem);
-                        await client.DisconnectAsync(true);
-                        
-                        Console.WriteLine($"[MAILTRAP SUCESSO] Código {token} entregue com sucesso!");
-                    }
+                request.Content = JsonContent.Create(payload);
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.IsSuccessStatusCode) {
+                    Console.WriteLine($"[API SUCESSO] E-mail enviado via HTTP para {emailDestino}");
+                } else {
+                    var erro = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[API ERRO]: {erro}");
                 }
-                catch (Exception ex) {
-                    // Aparecerá no log do Railway se o problema persistir
-                    Console.WriteLine($"[MAILTRAP ERRO]: {ex.Message}");
-                }
-            });
-        }
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"[API EXCEPTION]: {ex.Message}");
+            }
+        });
     }
 }
