@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 

@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MailKit.Security; // IMPORTANTE: Certifique-se de ter este using
+using System.Net;
+using System.Net.Mail;
 
 namespace ClassesBSFM
 {
