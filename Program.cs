@@ -66,10 +66,6 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     return Results.Ok(new { mensagem = "Tudo certo! Verifique seu Mailtrap para ativar." });
 });
 
-    return Results.Ok(new { mensagem = "Usuário pré-cadastrado! Verifique seu e-mail no Mailtrap." });
-});
-
-
 // NOVA ROTA: ATIVAR CONTA VIA TOKEN
 app.MapPost("/verificar-token", (TokenRequest req) => {
     using var scope = app.Services.CreateScope();
