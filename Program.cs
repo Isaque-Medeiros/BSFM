@@ -28,6 +28,8 @@ app.UseStaticFiles();
 // DATABASE
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+
+    db.Database.EnsureDeleted();
     db.Database.EnsureCreated();
 }
 
@@ -56,7 +58,7 @@ app.MapPost("/cadastrar-usuario", (Usuario usuarioVindoDoJs) => {
     
     db.Usuarios.Add(usuarioVindoDoJs);
     db.SaveChanges();
-    
+
     Task.Run(() => EmailService.EnviarToken(usuarioVindoDoJs.Email, tokenGerado));
     return Results.Ok(new { mensagem = "Conta criada com sucesso!" });
 });
