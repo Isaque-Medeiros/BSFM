@@ -123,48 +123,56 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
-public class EmailService 
-{
-    public static void EnviarToken(string emailDestino, string token) 
+    public class EmailService 
     {
-        // Roda em segundo plano para liberar o seu site na hora
-        Task.Run(async () => {
-            try {
-                var mensagem = new MimeMessage();
-                mensagem.From.Add(new MailboxAddress("Portal BSFM", "sistema@bsfmnutri.io"));
-                mensagem.To.Add(new MailboxAddress("", emailDestino));
-                mensagem.Subject = "🔐 Código de Ativação BSFM";
+        public static void EnviarToken(string emailDestino, string token) 
+        {
+            // _ = Task.Run para rodar em background sem travar o cadastro
+            _ = Task.Run(async () => {
+                try {
+                    var mensagem = new MimeMessage();
+                    // "NOREPLY" é padrão para sistemas, e-mail fictício liberado pelo Mailtrap
+                    mensagem.From.Add(new MailboxAddress("Portal BSFM", "noreply@bsfmnutri.io"));
+                    mensagem.To.Add(new MailboxAddress("", emailDestino));
+                    mensagem.Subject = "🔐 Código de Ativação BSFM";
 
-                mensagem.Body = new TextPart("html") {
-                    Text = $@"<h2 style='color:#059669'>Código BSFM: {token}</h2>"
-                };
+                    // DESIGN SOFT NO EMAIL:
+                    mensagem.Body = new TextPart("html") {
+                        Text = $@"
+                            <div style='font-family: sans-serif; background-color: #f0fdf4; padding: 40px; text-align: center; border-radius: 20px;'>
+                                <h2 style='color: #065f46; margin-bottom: 20px;'>Portal Nutricional BSFM</h2>
+                                <p style='color: #374151;'>Use o código abaixo para ativar sua conta:</p>
+                                <div style='background: #ffffff; padding: 20px; border-radius: 12px; display: inline-block; border: 1px solid #d1fae5;'>
+                                    <span style='font-size: 32px; font-weight: bold; color: #166534; letter-spacing: 5px;'>{token}</span>
+                                </div>
+                            </div>"
+                    };
 
-                using (var client = new SmtpClient()) 
-                {
-                    // --- AJUSTES PARA FUNCIONAR NO RAILWAY ---
-                    client.Timeout = 30000; // 30 segundos de espera
-                    
-                    // ESSA LINHA ABAIXO É A CHAVE: Desativa a verificação lenta do Linux que causa Timeout
-                    client.CheckCertificateRevocation = false; 
+                    using (var client = new MailKit.Net.Smtp.SmtpClient()) 
+                    {
+                        // PROTEÇÕES CONTRA TIMEOUT NO RAILWAY
+                        client.Timeout = 20000; // 20 segundos
+                        client.CheckCertificateRevocation = false; 
+                        client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
-                    client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
-                    // CONEXÃO USANDO PORTA 2525 (A que o Railway raramente bloqueia)
-                    await client.ConnectAsync("sandbox.smtp.mailtrap.io", 2525, SecureSocketOptions.StartTls);
-                    
-                    await client.AuthenticateAsync("2f43feed9ca5d6", "27f292915287b6");
-                    
-                    await client.SendAsync(mensagem);
-                    await client.DisconnectAsync(true);
-                    
-                    Console.WriteLine($"[EMAIL] SUCESSO! Código {token} enviado.");
+                        // CONEXÃO COM SEUS DADOS:
+                        // Porta 2525 é o padrão recomendado para evitar bloqueios de cloud
+                        await client.ConnectAsync("sandbox.smtp.mailtrap.io", 2525, MailKit.Security.SecureSocketOptions.StartTls);
+                        
+                        // LOGIN (Dados que você pegou na print):
+                        await client.AuthenticateAsync("2f43feed9ca5d6", "27f292915287b6");
+                        
+                        await client.SendAsync(mensagem);
+                        await client.DisconnectAsync(true);
+                        
+                        Console.WriteLine($"[MAILTRAP SUCESSO] Código {token} entregue com sucesso!");
+                    }
                 }
-            }
-            catch (Exception ex) {
-                // Esse erro aparecerá no seu terminal se o Mailtrap ainda recusar
-                Console.WriteLine($"[EMAIL ERROR]: {ex.Message}");
-            }
-        });
+                catch (Exception ex) {
+                    // Aparecerá no log do Railway se o problema persistir
+                    Console.WriteLine($"[MAILTRAP ERRO]: {ex.Message}");
+                }
+            });
+        }
     }
-}
 }
