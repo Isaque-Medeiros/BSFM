@@ -280,60 +280,52 @@
     async function cadastrar() {
         const resDiv = document.getElementById('resultado');
         
-        // Coleta os valores
-        const nome = document.getElementById('nome').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const senha = document.getElementById('senha').value; // Senha não deve ter trim automático para checagem de espaços
-        const idade = parseInt(document.getElementById('idade').value);
-        const peso = parseFloat(document.getElementById('peso').value);
-        const altura = parseFloat(document.getElementById('altura').value);
-        const sexo = document.getElementById('sexo').value;
-        const atividade = document.getElementById('atividade').value;
+        // MANTIDO EXATAMENTE COMO NO SEU ORIGINAL
+        const dados = {
+            Nome: document.getElementById('nome').value,
+            Email: document.getElementById('email').value,
+            SenhaHash: document.getElementById('senha').value,
+            Idade: parseInt(document.getElementById('idade').value),
+            Peso: parseFloat(document.getElementById('peso').value),
+            Altura: parseFloat(document.getElementById('altura').value),
+            Sexo: document.getElementById('sexo').value,
+            TipoPessoa: document.getElementById('atividade').value,
+            AceitouTermos: true
+        };
 
-        // --- VALIDAÇÕES DE SEGURANÇA (Requisitos da Senha) ---
-
-        // 1. Verificar se campos básicos estão vazios
-        if (!nome || !email || !senha) {
-            exibirMensagem("⚠️ Preencha Nome, E-mail e Senha!", "#fffbeb", "#92400e", "#fef3c7");
+        // 1. Verificação básica original (preenchimento)
+        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
+            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
-        // 2. Proibir espaços em branco na senha
-        if (/\s/.test(senha)) {
-            exibirMensagem("⚠️ A senha não pode conter espaços em branco!", "#fffbeb", "#92400e", "#fef3c7");
+        // --- NOVOS REQUISITOS DE SEGURANÇA (Adicionados sem quebrar a lógica) ---
+
+        // Verificação de Espaços
+        if (/\s/.test(dados.SenhaHash)) {
+            exibirMensagem("⚠️ A senha não pode conter espaços!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
-        // 3. Mínimo 8 caracteres
-        if (senha.length < 8) {
+        // Mínimo 8 caracteres
+        if (dados.SenhaHash.length < 8) {
             exibirMensagem("⚠️ A senha deve ter no mínimo 8 caracteres!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
-        // 4. Pelo menos um número
-        if (!/[0-9]/.test(senha)) {
+        // Pelo menos um número
+        if (!/[0-9]/.test(dados.SenhaHash)) {
             exibirMensagem("⚠️ A senha deve conter pelo menos um número!", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
-        // 5. Pelo menos um caractere especial
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
-            exibirMensagem("⚠️ A senha deve conter pelo menos um caractere especial (Ex: @, #, $, !)", "#fffbeb", "#92400e", "#fef3c7");
+        // Pelo menos um caractere especial
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(dados.SenhaHash)) {
+            exibirMensagem("⚠️ A senha deve conter um símbolo (!@#$...)", "#fffbeb", "#92400e", "#fef3c7");
             return;
         }
 
-        // Dados prontos para enviar (mantendo os mesmos nomes que seu back-end espera)
-        const dados = {
-            Nome: nome,
-            Email: email,
-            SenhaHash: senha,
-            Idade: idade,
-            Peso: peso,
-            Altura: altura,
-            Sexo: sexo,
-            TipoPessoa: atividade,
-            AceitouTermos: true
-        };
+        // --- FIM DAS VALIDAÇÕES / ENVIO MANTIDO ---
 
         try {
             const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
@@ -343,11 +335,7 @@
             });
             const data = await resp.json();
             
-            if (resp.ok) {
-                exibirMensagem(`✅ ${data.mensagem}<br>Acesse a aba 'Acessar Painel' para entrar.`, "#f0fdf4", "#166534", "#dcfce7");
-            } else {
-                exibirMensagem(`⚠️ ${data.mensagem || "Erro no cadastro"}`, "#fffbeb", "#92400e", "#fef3c7");
-            }
+            exibirMensagem(`✅ ${data.mensagem}<br>Acesse a aba 'Login' para continuar.`, "#f0fdf4", "#166534", "#dcfce7");
         } catch (err) {
             exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
         }
@@ -355,14 +343,9 @@
 
     async function login() {
         const dados = {
-            Email: document.getElementById('login_email').value.trim(),
+            Email: document.getElementById('login_email').value,
             Senha: document.getElementById('login_senha').value
         };
-
-        if (!dados.Email || !dados.Senha) {
-            exibirMensagem("⚠️ Informe e-mail e senha.", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
 
         try {
             const resp = await fetch(`${API_URL}/login`, {
