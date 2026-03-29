@@ -300,17 +300,28 @@
         resDiv.innerHTML = texto;
     }
 
-    // Ação: Iniciar Cadastro com Requisitos de Senha
+    // Ação: Iniciar Cadastro com novas validações (E-mail, Peso e Altura)
     async function cadastrar() {
-        const nome = document.getElementById('nome').value;
-        const email = document.getElementById('email').value;
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim();
         const senha = document.getElementById('senha').value;
+        const pesoRaw = document.getElementById('peso').value;
+        const alturaRaw = document.getElementById('altura').value;
 
-        // --- VALIDAÇÕES DE SEGURANÇA DA SENHA ---
+        // 1. Verificação básica de preenchimento (Nome, E-mail, Senha)
         if (!nome || !email || !senha) {
             exibirMensagem("⚠️ Preencha Nome, E-mail e Senha!", "#fffbeb", "#92400e");
             return;
         }
+
+        // 2. Validação de Formato de E-mail (NOVO)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            exibirMensagem("⚠️ Insira um formato de e-mail válido!", "#fffbeb", "#92400e");
+            return;
+        }
+
+        // 3. Validação de Senha (Já implementado)
         if (/\s/.test(senha)) {
             exibirMensagem("⚠️ A senha não pode conter espaços!", "#fffbeb", "#92400e");
             return;
@@ -328,13 +339,20 @@
             return;
         }
 
+        // 4. Verificação de Peso e Altura (NOVO)
+        // Verifica se estão vazios ou se são menores/iguais a zero
+        if (!pesoRaw || !alturaRaw || parseFloat(pesoRaw) <= 0 || parseFloat(alturaRaw) <= 0) {
+            exibirMensagem("⚠️ Preencha o Peso e a Altura corretamente!", "#fffbeb", "#92400e");
+            return;
+        }
+
         usuarioTemporario = {
             Nome: nome,
             Email: email,
             SenhaHash: senha,
             Idade: parseInt(document.getElementById('idade').value) || 0,
-            Peso: parseFloat(document.getElementById('peso').value) || 0,
-            Altura: parseFloat(document.getElementById('altura').value) || 0,
+            Peso: parseFloat(pesoRaw),
+            Altura: parseFloat(alturaRaw),
             Sexo: document.getElementById('sexo').value,
             TipoPessoa: document.getElementById('atividade').value,
             AceitouTermos: true
@@ -381,8 +399,8 @@
 
     async function solicitarCodigoRecuperacao() {
         const emailField = document.getElementById('recuperar_email');
-        if(!emailField.value) {
-            exibirMensagem("⚠️ Digite seu e-mail.", "#fffbeb", "#92400e");
+        if(!emailField.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
+            exibirMensagem("⚠️ Insira um e-mail válido para recuperar.", "#fffbeb", "#92400e");
             return;
         }
         emailAcao = emailField.value;
@@ -412,7 +430,6 @@
             return;
         }
 
-        // Validação da nova senha igual ao cadastro
         if (nova.length < 8 || !/[0-9]/.test(nova) || !/[!@#$%^&*()]/.test(nova) || /\s/.test(nova)) {
             exibirMensagem("⚠️ A nova senha deve ter 8+ caracteres, número, símbolo e sem espaços.", "#fffbeb", "#92400e");
             return;
