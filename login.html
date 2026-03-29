@@ -266,114 +266,186 @@
 
 <script>
     const API_URL = 'https://bsfm-production.up.railway.app';
+    
+    // VARIÁVEIS TOTAIS PRESERVADAS
+    let emailAcao = ""; 
+    let tokenSistema = ""; 
+    let usuarioTemporario = {}; 
 
     function switchTab(event, tabId) { 
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
         document.getElementById(tabId).classList.add('active'); 
-        event.currentTarget.classList.add('active');
-        document.getElementById('resultado').style.display = 'none';
-        document.getElementById('resultado').classList.add('hidden');
-    }
-
-    async function cadastrar() {
-        const resDiv = document.getElementById('resultado');
         
-        // MANTIDO EXATAMENTE COMO NO SEU ORIGINAL
-        const dados = {
-            Nome: document.getElementById('nome').value,
-            Email: document.getElementById('email').value,
-            SenhaHash: document.getElementById('senha').value,
-            Idade: parseInt(document.getElementById('idade').value),
-            Peso: parseFloat(document.getElementById('peso').value),
-            Altura: parseFloat(document.getElementById('altura').value),
-            Sexo: document.getElementById('sexo').value,
-            TipoPessoa: document.getElementById('atividade').value,
-            AceitouTermos: true
-        };
-
-        // 1. Verificação básica original (preenchimento)
-        if(!dados.Nome || !dados.Email || !dados.SenhaHash) {
-            exibirMensagem("⚠️ Atenção: Preencha Nome, Email e Senha!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        // --- NOVOS REQUISITOS DE SEGURANÇA (Adicionados sem quebrar a lógica) ---
-
-        // Verificação de Espaços
-        if (/\s/.test(dados.SenhaHash)) {
-            exibirMensagem("⚠️ A senha não pode conter espaços!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        // Mínimo 8 caracteres
-        if (dados.SenhaHash.length < 8) {
-            exibirMensagem("⚠️ A senha deve ter no mínimo 8 caracteres!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        // Pelo menos um número
-        if (!/[0-9]/.test(dados.SenhaHash)) {
-            exibirMensagem("⚠️ A senha deve conter pelo menos um número!", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        // Pelo menos um caractere especial
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(dados.SenhaHash)) {
-            exibirMensagem("⚠️ A senha deve conter um símbolo (!@#$...)", "#fffbeb", "#92400e", "#fef3c7");
-            return;
-        }
-
-        // --- FIM DAS VALIDAÇÕES / ENVIO MANTIDO ---
-
-        try {
-            const resp = await fetch(`${API_URL}/cadastrar-usuario`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            const data = await resp.json();
-            
-            exibirMensagem(`✅ ${data.mensagem}<br>Acesse a aba 'Login' para continuar.`, "#f0fdf4", "#166534", "#dcfce7");
-        } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
-        }
-    }
-
-    async function login() {
-        const dados = {
-            Email: document.getElementById('login_email').value,
-            Senha: document.getElementById('login_senha').value
-        };
-
-        try {
-            const resp = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-
-            if (resp.ok) {
-                const user = await resp.json();
-                localStorage.setItem('usuarioLogado', JSON.stringify(user));
-                window.location.href = 'dashboard.html'; 
+        const abas = document.getElementById('nav-tabs');
+        if(abas) {
+            if(tabId === 'recuperar-senha' || tabId === 'verificacao-token') {
+                abas.classList.add('hidden');
             } else {
-                exibirMensagem("⚠️ E-mail ou senha incorretos.", "#fffbeb", "#92400e", "#fef3c7");
+                abas.classList.remove('hidden');
             }
-        } catch (err) {
-            exibirMensagem("❌ Erro ao conectar com o servidor.", "#fef2f2", "#991b1b", "#fee2e2");
         }
+
+        document.querySelectorAll('button[id^="btn-"]').forEach(btn => btn.classList.remove('tab-active'));
+        if(event && event.currentTarget) event.currentTarget.classList.add('tab-active');
+
+        document.getElementById('resultado').style.display = 'none';
     }
 
-    function exibirMensagem(texto, fundo, cor, borda) {
+    function exibirMensagem(texto, fundo, cor) {
         const resDiv = document.getElementById('resultado');
         resDiv.style.display = "block";
         resDiv.classList.remove('hidden');
         resDiv.style.backgroundColor = fundo;
         resDiv.style.color = cor;
-        resDiv.style.borderColor = borda;
         resDiv.innerHTML = texto;
+    }
+
+    // Ação: Iniciar Cadastro com Requisitos de Senha
+    async function cadastrar() {
+        const nome = document.getElementById('nome').value;
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+
+        // --- VALIDAÇÕES DE SEGURANÇA DA SENHA ---
+        if (!nome || !email || !senha) {
+            exibirMensagem("⚠️ Preencha Nome, E-mail e Senha!", "#fffbeb", "#92400e");
+            return;
+        }
+        if (/\s/.test(senha)) {
+            exibirMensagem("⚠️ A senha não pode conter espaços!", "#fffbeb", "#92400e");
+            return;
+        }
+        if (senha.length < 8) {
+            exibirMensagem("⚠️ Senha deve ter no mínimo 8 caracteres!", "#fffbeb", "#92400e");
+            return;
+        }
+        if (!/[0-9]/.test(senha)) {
+            exibirMensagem("⚠️ A senha deve conter pelo menos um número!", "#fffbeb", "#92400e");
+            return;
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
+            exibirMensagem("⚠️ A senha deve conter um caractere especial (!@#$)", "#fffbeb", "#92400e");
+            return;
+        }
+
+        usuarioTemporario = {
+            Nome: nome,
+            Email: email,
+            SenhaHash: senha,
+            Idade: parseInt(document.getElementById('idade').value) || 0,
+            Peso: parseFloat(document.getElementById('peso').value) || 0,
+            Altura: parseFloat(document.getElementById('altura').value) || 0,
+            Sexo: document.getElementById('sexo').value,
+            TipoPessoa: document.getElementById('atividade').value,
+            AceitouTermos: true
+        };
+
+        try {
+            exibirMensagem("⏳ Verificando dados...", "#fffbeb", "#92400e");
+            const resp = await fetch(`${API_URL}/solicitar-codigo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Email: usuarioTemporario.Email })
+            });
+
+            const data = await resp.json();
+            if(resp.ok) {
+                tokenSistema = data.tokenParaJs;
+                emailAcao = usuarioTemporario.Email;
+                exibirMensagem("📩 Código enviado com sucesso!", "#f0fdf4", "#166534");
+                setTimeout(() => switchTab(null, 'verificacao-token'), 1500);
+            } else {
+                exibirMensagem(data.mensagem, "#fef2f2", "#991b1b");
+            }
+        } catch(e) {
+            exibirMensagem("❌ Erro ao conectar ao portal.", "#fef2f2", "#991b1b");
+        }
+    }
+
+    async function verificarToken() {
+        const digitado = document.getElementById('token_input').value;
+        if(digitado === tokenSistema) {
+            exibirMensagem("🔄 Criando Perfil...", "#f0fdf4", "#166534");
+            const final = await fetch(`${API_URL}/cadastrar-usuario-final`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(usuarioTemporario)
+            });
+            if(final.ok) {
+                exibirMensagem("✨ Pronto! Agora faça Login.", "#f0fdf4", "#166534");
+                setTimeout(() => location.reload(), 2000);
+            }
+        } else {
+            exibirMensagem("⚠️ Código inválido.", "#fef2f2", "#991b1b");
+        }
+    }
+
+    async function solicitarCodigoRecuperacao() {
+        const emailField = document.getElementById('recuperar_email');
+        if(!emailField.value) {
+            exibirMensagem("⚠️ Digite seu e-mail.", "#fffbeb", "#92400e");
+            return;
+        }
+        emailAcao = emailField.value;
+        try {
+            const resp = await fetch(`${API_URL}/esqueci-senha`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ Email: emailAcao })
+            });
+            const data = await resp.json();
+            if(resp.ok) {
+                tokenSistema = data.tokenParaJs;
+                document.getElementById('passo-2-recuperar').classList.remove('hidden');
+                document.getElementById('passo-1-recuperar').style.display = 'none';
+                exibirMensagem("🔑 Verifique o código no e-mail.", "#f0fdf4", "#166534");
+            } else {
+                exibirMensagem(data.mensagem, "#fef2f2", "#991b1b");
+            }
+        } catch(e) { exibirMensagem("❌ Conexão falhou.", "#fef2f2", "#991b1b"); }
+    }
+
+    async function finalizarRecuperacao() {
+        const tokenToken = document.getElementById('recuperar_token').value;
+        const nova = document.getElementById('recuperar_nova_senha').value;
+        
+        if(tokenToken !== tokenSistema) {
+            exibirMensagem("⚠️ Código errado.", "#fef2f2", "#991b1b");
+            return;
+        }
+
+        // Validação da nova senha igual ao cadastro
+        if (nova.length < 8 || !/[0-9]/.test(nova) || !/[!@#$%^&*()]/.test(nova) || /\s/.test(nova)) {
+            exibirMensagem("⚠️ A nova senha deve ter 8+ caracteres, número, símbolo e sem espaços.", "#fffbeb", "#92400e");
+            return;
+        }
+
+        try {
+            await fetch(`${API_URL}/redefinir-senha`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ Email: emailAcao, NovaSenha: nova })
+            });
+            exibirMensagem("✨ Senha trocada!", "#f0fdf4", "#166534");
+            setTimeout(() => location.reload(), 2000);
+        } catch(e) { exibirMensagem("❌ Erro ao redefinir.", "#fef2f2", "#991b1b"); }
+    }
+
+    async function login() {
+        const d = { 
+            Email: document.getElementById('login_email').value, 
+            Senha: document.getElementById('login_senha').value 
+        };
+        try {
+            const r = await fetch(`${API_URL}/login`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(d)
+            });
+            const info = await r.json();
+            if(r.ok) {
+                localStorage.setItem('usuarioLogado', JSON.stringify(info));
+                window.location.href = 'dashboard.html';
+            } else {
+                exibirMensagem(info.mensagem || "Erro ao logar", "#fef2f2", "#991b1b");
+            }
+        } catch(e) { exibirMensagem("❌ Portal offline.", "#fef2f2", "#991b1b"); }
     }
 </script>
 
