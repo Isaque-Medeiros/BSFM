@@ -164,11 +164,37 @@
                     <option value="Muito Ativo">Muito Ativo (Atleta)</option>
                 </select>
             </div>
+                    <div class="flex items-start gap-2 mb-4 px-1">
+            <input type="checkbox" id="checkTermos" class="mt-1 w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer">
+            <label for="checkTermos" class="text-[11px] text-gray-500 font-medium leading-tight cursor-pointer">
+                Eu li e concordo com os <button type="button" onclick="abrirTermos()" class="text-emerald-600 font-bold hover:underline">Termos de Contrato e Uso</button>
+            </label>
+        </div>
 
+        <!-- Pop-up (Modal) de Termos -->
+        <div id="modalTermos" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
+                    <h3 class="text-emerald-900 font-bold uppercase text-xs tracking-widest">Termos de Contrato</h3>
+                    <button onclick="fecharTermos()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto text-sm text-gray-600 leading-relaxed">
+                    <!-- Texto de Exemplo -->
+                    <p class="mb-4"><b>1. Objeto:</b> Este contrato regula o uso do Portal BSFM para monitoramento nutricional.</p>
+                    <p class="mb-4"><b>2. Privacidade:</b> Seus dados de saúde (peso, altura) são processados exclusivamente para fins de cálculos nutricionais dentro desta plataforma.</p>
+                    <p class="mb-4"><b>3. Responsabilidade:</b> Os resultados são estimativas baseadas em algoritmos e não substituem uma consulta presencial com um médico ou nutricionista.</p>
+                    <p><b>4. Aceite:</b> Ao prosseguir, você confirma que as informações fornecidas são verdadeiras.</p>
+                </div>
+                <div class="p-4 bg-gray-50 text-center border-t border-gray-100">
+                    <button onclick="fecharTermos()" class="bg-emerald-600 text-white px-8 py-2 rounded-xl font-bold text-xs hover:bg-emerald-700 transition-colors">Entendido</button>
+                </div>
+            </div>
+        </div>
             <button onclick="cadastrar()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform active:scale-95 mt-4">
                 Finalizar Meu Cadastro <i class="fas fa-check-circle ml-2"></i>
             </button>
         </div>
+
     </div>
 
     <!-- SEÇÃO DE VERIFICAÇÃO DE TOKEN (Adicionada) -->
@@ -267,10 +293,13 @@
 <script>
     const API_URL = 'https://bsfm-production.up.railway.app';
     
-    // VARIÁVEIS TOTAIS PRESERVADAS
     let emailAcao = ""; 
     let tokenSistema = ""; 
     let usuarioTemporario = {}; 
+
+    // Funções para controlar o Pop-up (Modal)
+    function abrirTermos() { document.getElementById('modalTermos').classList.remove('hidden'); }
+    function fecharTermos() { document.getElementById('modalTermos').classList.add('hidden'); }
 
     function switchTab(event, tabId) { 
         document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
@@ -300,47 +329,39 @@
         resDiv.innerHTML = texto;
     }
 
-    // Ação: Iniciar Cadastro com novas validações (E-mail, Peso e Altura)
     async function cadastrar() {
         const nome = document.getElementById('nome').value.trim();
         const email = document.getElementById('email').value.trim();
         const senha = document.getElementById('senha').value;
         const pesoRaw = document.getElementById('peso').value;
         const alturaRaw = document.getElementById('altura').value;
+        const aceitouCheck = document.getElementById('checkTermos').checked; // Captura o check
 
-        // 1. Verificação básica de preenchimento (Nome, E-mail, Senha)
+        // 1. Validação dos Termos (NOVO)
+        if (!aceitouCheck) {
+            exibirMensagem("⚠️ Você deve ler e aceitar os termos!", "#fffbeb", "#92400e");
+            return;
+        }
+
+        // 2. Validações básicas (E-mail, Campos vazios)
         if (!nome || !email || !senha) {
             exibirMensagem("⚠️ Preencha Nome, E-mail e Senha!", "#fffbeb", "#92400e");
             return;
         }
 
-        // 2. Validação de Formato de E-mail (NOVO)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             exibirMensagem("⚠️ Insira um formato de e-mail válido!", "#fffbeb", "#92400e");
             return;
         }
 
-        // 3. Validação de Senha (Já implementado)
-        if (/\s/.test(senha)) {
-            exibirMensagem("⚠️ A senha não pode conter espaços!", "#fffbeb", "#92400e");
-            return;
-        }
-        if (senha.length < 8) {
-            exibirMensagem("⚠️ Senha deve ter no mínimo 8 caracteres!", "#fffbeb", "#92400e");
-            return;
-        }
-        if (!/[0-9]/.test(senha)) {
-            exibirMensagem("⚠️ A senha deve conter pelo menos um número!", "#fffbeb", "#92400e");
-            return;
-        }
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
-            exibirMensagem("⚠️ A senha deve conter um caractere especial (!@#$)", "#fffbeb", "#92400e");
+        // 3. Validações de Senha
+        if (/\s/.test(senha) || senha.length < 8 || !/[0-9]/.test(senha) || !/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
+            exibirMensagem("⚠️ Senha deve ter 8+ chars, número e caractere especial sem espaços!", "#fffbeb", "#92400e");
             return;
         }
 
-        // 4. Verificação de Peso e Altura (NOVO)
-        // Verifica se estão vazios ou se são menores/iguais a zero
+        // 4. Peso e Altura
         if (!pesoRaw || !alturaRaw || parseFloat(pesoRaw) <= 0 || parseFloat(alturaRaw) <= 0) {
             exibirMensagem("⚠️ Preencha o Peso e a Altura corretamente!", "#fffbeb", "#92400e");
             return;
