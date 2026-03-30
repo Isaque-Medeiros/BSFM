@@ -148,7 +148,7 @@ namespace ClassesBSFM
 
                     var payload = new
                     {
-                        sender = new { name = "Portal BSFM Nutri", email = emailRemetente },
+                        sender = new { name = "Portal BSFM", email = emailRemetente },
                         to = new[] { new { email = emailDestino, name = "Usuario BSFM" } },
                         subject = "🔐 Código de Segurança: " + token,
                         htmlContent = $@"
