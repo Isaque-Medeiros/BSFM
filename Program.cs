@@ -79,6 +79,46 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
     return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
 });
 
+// --- ROTA: ESQUECI MINHA SENHA (PASSO 1) ---
+app.MapPost("/esqueci-senha", (EsqueceuSenhaDTO req) => {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+    var email = req.Email.Trim().ToLower();
+
+    // 1. Verifica se o usuário existe
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == email);
+    if (user == null)
+        return Results.Json(new { mensagem = "E-mail não encontrado em nossa base." }, statusCode: 404);
+
+    // 2. Gera o Token de 6 dígitos
+    string token = new Random().Next(100000, 999999).ToString();
+
+    // 3. CHAMA O SERVIÇO DE E-MAIL (Aqui ele envia para o Mailtrap)
+    EmailService.EnviarToken(email, token);
+
+    // 4. Retorna para o JS para que ele possa comparar o token depois
+    return Results.Ok(new { mensagem = "Código enviado com sucesso!", tokenParaJs = token });
+});
+
+// --- ROTA: REDEFINIR SENHA (PASSO 2 - FINAL) ---
+app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+    var email = req.Email.Trim().ToLower();
+
+    // 1. Localiza o usuário
+    var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == email);
+    if (user == null)
+        return Results.Json(new { mensagem = "Usuário não identificado." }, statusCode: 404);
+
+    // 2. Criptografa a nova senha e salva
+    user.SenhaHash = BCrypt.Net.BCrypt.HashPassword(req.NovaSenha);
+    
+    db.Usuarios.Update(user);
+    db.SaveChanges();
+
+    return Results.Ok(new { mensagem = "Senha atualizada com sucesso!" });
+});
 // Outras rotas permanecem...
 
 app.Run(); // FINAL DO ARQUIVO
@@ -88,3 +128,5 @@ public record LoginDTO(string Email, string Senha);
 public record SolicitacaoEmail(string Email);
 public record RedefinicaoSenha(string Email, string NovaSenha);
 public record RedefinicaoFinal(string Email, string NovaSenha);
+public record EsqueceuSenhaDTO(string Email);
+public record RedefinicaoSenhaDTO(string Email, string NovaSenha);
