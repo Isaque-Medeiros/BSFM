@@ -291,13 +291,15 @@
 </div>
 
 <script>
-    const API_URL = 'https://bsfm-nutric.up.railway.app';
+    // AJUSTE: O URL abaixo deve ser o do seu ambiente atual (visto no seu log do Railway)
+    const API_URL = 'http://bsfm-nutric.up.railway.app'; 
     
+    // VARIÁVEIS TOTAIS - MANTIDAS INTEGRALMENTE
     let emailAcao = ""; 
     let tokenSistema = ""; 
     let usuarioTemporario = {}; 
 
-    // Funções para controlar o Pop-up (Modal)
+    // Funções para os Termos (Modal)
     function abrirTermos() { document.getElementById('modalTermos').classList.remove('hidden'); }
     function fecharTermos() { document.getElementById('modalTermos').classList.add('hidden'); }
 
@@ -329,58 +331,55 @@
         resDiv.innerHTML = texto;
     }
 
+    // Ação: Iniciar Cadastro (Solicitar Token)
     async function cadastrar() {
-        const nome = document.getElementById('nome').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const senha = document.getElementById('senha').value;
-        const pesoRaw = document.getElementById('peso').value;
-        const alturaRaw = document.getElementById('altura').value;
-        const aceitouCheck = document.getElementById('checkTermos').checked; // Captura o check
+        const checkTermos = document.getElementById('checkTermos');
+        const emailInput = document.getElementById('email').value.trim();
+        const senhaInput = document.getElementById('senha').value;
+        const pesoInput = document.getElementById('peso').value;
+        const alturaInput = document.getElementById('altura').value;
 
-        // 1. Validação dos Termos (NOVO)
-        if (!aceitouCheck) {
-            exibirMensagem("⚠️ Você deve ler e aceitar os termos!", "#fffbeb", "#92400e");
+        // 1. Validação de Aceite dos Termos
+        if (!checkTermos.checked) {
+            exibirMensagem("⚠️ Leia e aceite os termos antes de prosseguir.", "#fffbeb", "#92400e");
             return;
         }
 
-        // 2. Validações básicas (E-mail, Campos vazios)
-        if (!nome || !email || !senha) {
-            exibirMensagem("⚠️ Preencha Nome, E-mail e Senha!", "#fffbeb", "#92400e");
-            return;
-        }
-
+        // 2. Validação de Formato de Email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(emailInput)) {
             exibirMensagem("⚠️ Insira um formato de e-mail válido!", "#fffbeb", "#92400e");
             return;
         }
 
-        // 3. Validações de Senha
-        if (/\s/.test(senha) || senha.length < 8 || !/[0-9]/.test(senha) || !/[!@#$%^&*(),.?":{}|<>]/.test(senha)) {
-            exibirMensagem("⚠️ Senha deve ter 8+ chars, número e caractere especial sem espaços!", "#fffbeb", "#92400e");
+        // 3. Validação de Senha (8+ chars, especial, número, sem espaço)
+        if (senhaInput.length < 8 || !/[0-9]/.test(senhaInput) || !/[!@#$%^&*()]/.test(senhaInput) || /\s/.test(senhaInput)) {
+            exibirMensagem("⚠️ A senha precisa de 8+ caracteres, 1 número, 1 símbolo e não ter espaços.", "#fffbeb", "#92400e");
             return;
         }
 
-        // 4. Peso e Altura
-        if (!pesoRaw || !alturaRaw || parseFloat(pesoRaw) <= 0 || parseFloat(alturaRaw) <= 0) {
-            exibirMensagem("⚠️ Preencha o Peso e a Altura corretamente!", "#fffbeb", "#92400e");
+        // 4. Validação de Peso e Altura (Não podem ser nulos)
+        if (!pesoInput || !alturaInput || parseFloat(pesoInput) <= 0 || parseFloat(alturaInput) <= 0) {
+            exibirMensagem("⚠️ Por favor, informe seu Peso e Altura corretamente.", "#fffbeb", "#92400e");
             return;
         }
 
+        // Montando o objeto exatamente como seu backend exige
         usuarioTemporario = {
-            Nome: nome,
-            Email: email,
-            SenhaHash: senha,
+            Nome: document.getElementById('nome').value,
+            Email: emailInput,
+            SenhaHash: senhaInput,
             Idade: parseInt(document.getElementById('idade').value) || 0,
-            Peso: parseFloat(pesoRaw),
-            Altura: parseFloat(alturaRaw),
+            Peso: parseFloat(pesoInput),
+            Altura: parseFloat(alturaInput),
             Sexo: document.getElementById('sexo').value,
             TipoPessoa: document.getElementById('atividade').value,
             AceitouTermos: true
         };
 
         try {
-            exibirMensagem("⏳ Verificando dados...", "#fffbeb", "#92400e");
+            exibirMensagem("⏳ Verificando dados e enviando token...", "#fffbeb", "#92400e");
+            
             const resp = await fetch(`${API_URL}/solicitar-codigo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -388,15 +387,17 @@
             });
 
             const data = await resp.json();
+            
             if(resp.ok) {
                 tokenSistema = data.tokenParaJs;
                 emailAcao = usuarioTemporario.Email;
-                exibirMensagem("📩 Código enviado com sucesso!", "#f0fdf4", "#166534");
+                exibirMensagem("📩 Código enviado! Verifique seu e-mail.", "#f0fdf4", "#166534");
                 setTimeout(() => switchTab(null, 'verificacao-token'), 1500);
             } else {
-                exibirMensagem(data.mensagem, "#fef2f2", "#991b1b");
+                exibirMensagem(data.mensagem || "Erro ao solicitar código.", "#fef2f2", "#991b1b");
             }
         } catch(e) {
+            console.error(e);
             exibirMensagem("❌ Erro ao conectar ao portal.", "#fef2f2", "#991b1b");
         }
     }
@@ -419,12 +420,7 @@
     }
 
     async function solicitarCodigoRecuperacao() {
-        const emailField = document.getElementById('recuperar_email');
-        if(!emailField.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
-            exibirMensagem("⚠️ Insira um e-mail válido para recuperar.", "#fffbeb", "#92400e");
-            return;
-        }
-        emailAcao = emailField.value;
+        emailAcao = document.getElementById('recuperar_email').value;
         try {
             const resp = await fetch(`${API_URL}/esqueci-senha`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -445,25 +441,16 @@
     async function finalizarRecuperacao() {
         const tokenToken = document.getElementById('recuperar_token').value;
         const nova = document.getElementById('recuperar_nova_senha').value;
-        
-        if(tokenToken !== tokenSistema) {
-            exibirMensagem("⚠️ Código errado.", "#fef2f2", "#991b1b");
-            return;
-        }
-
-        if (nova.length < 8 || !/[0-9]/.test(nova) || !/[!@#$%^&*()]/.test(nova) || /\s/.test(nova)) {
-            exibirMensagem("⚠️ A nova senha deve ter 8+ caracteres, número, símbolo e sem espaços.", "#fffbeb", "#92400e");
-            return;
-        }
-
-        try {
+        if(tokenToken === tokenSistema) {
             await fetch(`${API_URL}/redefinir-senha`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ Email: emailAcao, NovaSenha: nova })
             });
             exibirMensagem("✨ Senha trocada!", "#f0fdf4", "#166534");
             setTimeout(() => location.reload(), 2000);
-        } catch(e) { exibirMensagem("❌ Erro ao redefinir.", "#fef2f2", "#991b1b"); }
+        } else {
+            exibirMensagem("⚠️ Código errado.", "#fef2f2", "#991b1b");
+        }
     }
 
     async function login() {
@@ -481,7 +468,7 @@
                 localStorage.setItem('usuarioLogado', JSON.stringify(info));
                 window.location.href = 'dashboard.html';
             } else {
-                exibirMensagem(info.mensagem || "Erro ao logar", "#fef2f2", "#991b1b");
+                exibirMensagem(info.mensagem || "Credenciais inválidas", "#fef2f2", "#991b1b");
             }
         } catch(e) { exibirMensagem("❌ Portal offline.", "#fef2f2", "#991b1b"); }
     }
