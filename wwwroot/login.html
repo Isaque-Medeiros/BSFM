@@ -341,6 +341,7 @@
         const senhaInput = document.getElementById('senha').value;
         const peso = document.getElementById('peso').value;
         const altura = document.getElementById('altura').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.(com|org|net|br|[a-z]{2,})$/i;
 
         if (!checkTermos.checked) { exibirMensagem("⚠️ Aceite os termos para prosseguir.", "#fffbeb", "#92400e"); return; }
         if (!emailInput || !senhaInput || !peso || !altura) { exibirMensagem("⚠️ Preencha todos os campos.", "#fffbeb", "#92400e"); return; }
@@ -349,7 +350,7 @@
         if (senhaInput.length < 8 || !/[0-9]/.test(senhaInput) || !/[!@#$%^&*()]/.test(senhaInput)) {
             exibirMensagem("⚠️ Senha deve ter 8+ letras, 1 número e 1 símbolo.", "#fffbeb", "#92400e"); return;
         }
-        const emailRegex = /^[^\s@]+@[^\s@]+\.(com|org|net|br|[a-z]{2,})$/i;
+        
         if (!emailRegex.test(emailInput)) {
             exibirMensagem("⚠️ Por favor, insira um e-mail válido.", "#fffbeb", "#92400e"); 
             return;
