@@ -126,67 +126,75 @@ namespace ClassesBSFM
         public string Telefone { get; set; } = string.Empty;
     }
 
- public class EmailService 
-{
-    private static readonly HttpClient _httpClient = new HttpClient();
-
-    // DADOS REAIS FORNECIDOS POR VOCÊ
-    private const string apiToken = "78c16b8231ead79b43ffaf44838aab1a"; 
-    private const string inboxId = "4499518"; 
-
-    public static void EnviarToken(string emailDestino, string token) 
+ public class EmailService
     {
-        // _ = Descarta a Task para rodar em background liso
-        _ = Task.Run(async () => {
-            try {
-                // Endpoint oficial de Sandbox do Mailtrap via API
-                string url = $"https://sandbox.api.mailtrap.io/api/send/{inboxId}";
+        private static readonly HttpClient _httpClient = new HttpClient();
 
-                // Payload organizado no padrão que a API deles exige
-                var payload = new {
-                    to = new[] { 
-                        new { email = emailDestino, name = "Usuario BSFM" } 
-                    },
-                    from = new { 
-                        email = "portal@bsfm.io", 
-                        name = "BSFM Nutri" 
-                    },
-                    subject = "🔐 Código de Ativação BSFM",
-                    html = $@"
-                    <div style='font-family: sans-serif; background-color: #f0fdf4; padding: 40px; text-align: center; border-radius: 20px;'>
-                        <h1 style='color: #065f46; font-size: 24px; margin-bottom: 10px;'>Portal Nutricional BSFM</h1>
-                        <p style='color: #374151; font-size: 16px;'>Use o código de ativação para liberar seu acesso:</p>
-                        <div style='background: #ffffff; padding: 25px; border-radius: 15px; display: inline-block; border: 2px solid #d1fae5; margin: 20px 0;'>
-                            <span style='font-size: 36px; font-weight: bold; color: #166534; letter-spacing: 8px;'>{token}</span>
-                        </div>
-                        <p style='color: #64748b; font-size: 12px;'>Se você não solicitou este e-mail, por favor desconsidere.</p>
-                    </div>"
-                };
+        // RECOMENDAÇÃO: Pegue a chave do Railway por segurança. 
+        // Se preferir fixo, substitua o GetEnvironmentVariable pela sua string da API Key entre aspas.
+        private static string apiKey => Environment.GetEnvironmentVariable("BREVO_API_KEY") ?? "chave_nao_encontrada";
 
-                // Monta a requisição HTTP
-                using var request = new HttpRequestMessage(HttpMethod.Post, url);
-                
-                // AUTORIZAÇÃO: É aqui que usamos o seu Token de API
-                request.Headers.Add("Api-Token", apiToken);
-                
-                // SERIALIZA O JSON
-                request.Content = JsonContent.Create(payload);
+        // IMPORTANTE: Este e-mail deve ser o GMAIL que você validou no Brevo
+        private const string emailRemetente = "isaquemedeiros190406@gmail.com"; 
 
-                // Envia pela porta 443 (Internet comum), fugindo do bloqueio SMTP
-                var response = await _httpClient.SendAsync(request);
+        public static void EnviarToken(string emailDestino, string token)
+        {
+            // Executa em segundo plano para não travar a resposta do site/app
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    const string url = "https://api.brevo.com/v3/smtp/email";
 
-                if (response.IsSuccessStatusCode) {
-                    Console.WriteLine($"[API MAILTRAP] Código {token} entregue na Sandbox com sucesso!");
-                } else {
-                    var erroMsg = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"[API MAILTRAP ERRO] {(int)response.StatusCode} - {erroMsg}");
+                    var payload = new
+                    {
+                        sender = new { name = "Portal BSFM Nutri", email = emailRemetente },
+                        to = new[] { new { email = emailDestino, name = "Usuario BSFM" } },
+                        subject = "🔐 Código de Segurança: " + token,
+                        htmlContent = $@"
+                        <div style='font-family: sans-serif; background-color: #ffffff; padding: 40px; border: 1px solid #e5e7eb; border-radius: 24px; max-width: 500px; margin: auto;'>
+                            <div style='text-align: center; margin-bottom: 30px;'>
+                                <div style='background-color: #059669; display: inline-block; padding: 15px; border-radius: 18px;'>
+                                    <span style='color: white; font-size: 24px;'>BSFM</span>
+                                </div>
+                            </div>
+                            <h2 style='color: #111827; text-align: center; font-size: 20px;'>Verificação de Acesso</h2>
+                            <p style='color: #4b5563; text-align: center; font-size: 16px; line-height: 1.5;'>Olá! Utilize o código abaixo para validar sua identidade e proteger sua conta no Portal Nutricional.</p>
+                            
+                            <div style='background-color: #f0fdf4; border: 2px dashed #10b981; margin: 30px 0; padding: 25px; text-align: center; border-radius: 20px;'>
+                                <span style='font-size: 42px; font-weight: bold; color: #047857; letter-spacing: 12px; display: block;'>{token}</span>
+                            </div>
+                            
+                            <p style='color: #9ca3af; text-align: center; font-size: 12px; margin-top: 30px;'>
+                                Este é um e-mail automático do Sistema BSFM. <br> 
+                                Se você não solicitou este código, por favor ignore.
+                            </p>
+                        </div>"
+                    };
+
+                    using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                    
+                    // Cabeçalho obrigatório do Brevo
+                    request.Headers.Add("api-key", apiKey);
+                    request.Content = JsonContent.Create(payload);
+
+                    var response = await _httpClient.SendAsync(request);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"[BREVO SUCCESS] Token {token} enviado com sucesso para {emailDestino}.");
+                    }
+                    else
+                    {
+                        var error = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"[BREVO ERROR] Status: {response.StatusCode} - {error}");
+                    }
                 }
-            }
-            catch (Exception ex) {
-                // Se o problema persistir, esse log vai dizer o porquê no Railway
-                Console.WriteLine($"[API MAILTRAP FATAL]: {ex.Message}");
-            }
-        });
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[BREVO FATAL EXCEPTION] Falha crítica no envio: {ex.Message}");
+                }
+            });
+        }
     }
-}
 }
