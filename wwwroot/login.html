@@ -349,6 +349,11 @@
         if (senhaInput.length < 8 || !/[0-9]/.test(senhaInput) || !/[!@#$%^&*()]/.test(senhaInput)) {
             exibirMensagem("⚠️ Senha deve ter 8+ letras, 1 número e 1 símbolo.", "#fffbeb", "#92400e"); return;
         }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.(com|org|net|br|[a-z]{2,})$/i;
+        if (!emailRegex.test(emailInput)) {
+            exibirMensagem("⚠️ Por favor, insira um e-mail válido.", "#fffbeb", "#92400e"); 
+            return;
+}
 
         usuarioTemporario = {
             Nome: document.getElementById('nome').value,
