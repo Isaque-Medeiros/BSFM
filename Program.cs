@@ -51,9 +51,11 @@ app.MapPost("/solicitar-codigo", (SolicitacaoEmail req) => {
     if (db.Usuarios.AsNoTracking().Any(u => u.Email.ToLower() == email))
         return Results.Json(new { mensagem = "E-mail já cadastrado!" }, statusCode: 400);
 
+    // 2. Gera o Token de 6 dígitos
     string token = new Random().Next(100000, 999999).ToString();
-    // Supondo que você já tenha essa classe EmailService
-    // EmailService.EnviarToken(email, token); 
+
+    // 3. CHAMA O SERVIÇO DE E-MAIL (Aqui ele envia para o Mailtrap)
+    EmailService.EnviarToken(email, token);
     return Results.Ok(new { mensagem = "Código enviado!", tokenParaJs = token });
 });
 
