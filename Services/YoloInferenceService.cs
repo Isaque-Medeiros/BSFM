@@ -3,7 +3,7 @@ using YoloDotNet.Enums;
 using YoloDotNet.Models;
 using SkiaSharp;
 using System.Linq;
-using System.Collections.Generic; // ADICIONADO: Necessário para listas
+using System.Collections.Generic;
 
 namespace BSFM.Services
 {
@@ -11,11 +11,23 @@ namespace BSFM.Services
     {
         private readonly Yolo _yolo;
 
-        // LISTA BRANCA: O YOLO v10 Oficial (COCO) reconhece esses itens nutricionais.
-        private static readonly string[] AlimentosPermitidos = {
-            "banana", "apple", "sandwich", "orange", "broccoli", 
-            "carrot", "hot dog", "pizza", "donut", "cake"
+        // Dicionário Estático: EN -> PT
+        // Mudei para public static para que você possa usar Tradutor em outros arquivos se precisar
+        public static readonly Dictionary<string, string> Tradutor = new Dictionary<string, string>
+        {
+            { "banana", "Banana" },
+            { "apple", "Maçã" },
+            { "sandwich", "Sanduíche" },
+            { "orange", "Laranja" },
+            { "broccoli", "Brócolis" },
+            { "carrot", "Cenoura" },
+            { "hot dog", "Cachorro Quente" },
+            { "pizza", "Pizza" },
+            { "donut", "Rosca Doce" },
+            { "cake", "Bolo" }
         };
+
+        private static readonly string[] AlimentosPermitidos = Tradutor.Keys.ToArray();
 
         public YoloInferenceService()
         {
@@ -30,74 +42,52 @@ namespace BSFM.Services
             };
 
             _yolo = new Yolo(options);
+            Console.WriteLine($"[IA] Inicializada com o modelo: {modelPath}");
         }
 
-        // ALTERADO: Agora retorna uma Lista de strings (Vários alimentos)
         public List<string> DetectarAlimentos(byte[] imageBytes)
         {
-            var listaDetectada = new List<string>();
+            var resultadoFinalPT = new List<string>();
 
             try 
             {
-                if (imageBytes == null || imageBytes.Length == 0) return listaDetectada;
+                if (imageBytes == null || imageBytes.Length == 0) return resultadoFinalPT;
 
                 using var ms = new MemoryStream(imageBytes);
                 using var image = SKImage.FromEncodedData(ms);
                 
-                if (image == null) return listaDetectada;
+                if (image == null) return resultadoFinalPT;
 
-                // Executa detecção (Confidence 0.35 para ser preciso)
+                // Executa a detecção oficial
                 var results = _yolo.RunObjectDetection(image, 0.35);
 
-                // FILTRO DE MULTI-DETECÇÃO:
-                // Pegamos todos os itens que estão na nossa lista permitida de uma só vez
-                listaDetectada = results
-                    .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
-                    .Select(r => r.Label.Name.ToLower()) // Pega o nome do alimento
-                    .Distinct() // Se tiver várias fatias de cenoura, retorna apenas 1 vez o termo "carrot"
-                    .ToList();
-                                var labelsBrutos = results
+                // 1. Filtrar o que foi detectado no dataset original (nomes em Inglês)
+                var detectadosIngles = results
                     .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
                     .Select(r => r.Label.Name.ToLower())
                     .Distinct()
                     .ToList();
 
-                // TRADUÇÃO AQUI: Se o nome estiver no tradutor, usa a tradução, senão usa o original
-                foreach (var nomeEn in labelsBrutos)
+                // 2. Tradução para Português
+                foreach (var nomeEn in detectadosIngles)
                 {
+                    // Busca no dicionário, se não achar (muito difícil) mantém o original
                     string nomePt = Tradutor.ContainsKey(nomeEn) ? Tradutor[nomeEn] : nomeEn;
-                    listaDetectada.Add(nomePt);
+                    resultadoFinalPT.Add(nomePt);
                 }
 
-                return listaDetectada;
-
-                if (listaDetectada.Any())
+                if (resultadoFinalPT.Any())
                 {
-                    Console.WriteLine($"[IA SUCCESS] Alimentos detectados no prato: {string.Join(", ", listaDetectada)}");
+                    Console.WriteLine($"[IA SUCCESS] Traduzidos: {string.Join(", ", resultadoFinalPT)}");
                 }
 
-                return listaDetectada;
+                return resultadoFinalPT;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[IA FATAL ERROR] Erro na multi-inferência: {ex.Message}");
-                return listaDetectada;
+                Console.WriteLine($"[IA FATAL ERROR] Falha técnica: {ex.Message}");
+                return resultadoFinalPT;
             }
         }
-
-        private static readonly Dictionary<string, string> Tradutor = new Dictionary<string, string>
-        {
-            { "banana", "Banana" },
-            { "apple", "Maçã" },
-            { "sandwich", "Sanduíche" },
-            { "orange", "Laranja" },
-            { "broccoli", "Brócolis" },
-            { "carrot", "Cenoura" },
-            { "hot dog", "Cachorro Quente" },
-            { "pizza", "Pizza" },
-            { "donut", "Donut" },
-            { "cake", "Bolo" }
-        };
-
     }
 }
