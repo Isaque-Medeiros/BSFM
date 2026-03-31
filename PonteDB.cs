@@ -49,13 +49,14 @@ namespace PonteBanco
                     options.UseNpgsql(fallbackString);
                 }
             }
+            
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Ajuste para tabelas com nomes especiais
             modelBuilder.Entity<Refeição>().ToTable("Refeicoes");
-            modelBuilder.Entity<AnaliseIA>().ToTable("analises_ia");
+            modelBuilder.Entity<ClassesBSFM.AnaliseIA>().ToTable("analises_ia");
         }
     }
 }
