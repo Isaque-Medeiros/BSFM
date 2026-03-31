@@ -131,61 +131,76 @@ app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
 app.MapPost("/analisar-prato", async (
     [FromForm] IFormFile foto, 
     [FromForm] string porcao, 
-    [FromForm] int usuarioId, // NOVO: Recebido do JS do Dashboard
+    [FromForm] int usuarioId, 
     BSFM.Services.YoloInferenceService yolo, 
-    BSFM.Services.UsdaNutritionService nutri,
-    BSFMContext db) => // Injeta o contexto do banco
+    BSFM.Services.UsdaNutritionService nutri, 
+    PonteBanco.BSFMContext db) => 
 {
-    if (foto == null || foto.Length == 0) return Results.BadRequest("Imagem inválida.");
+    // Validação Inicial (Segurança)
+    if (foto == null || foto.Length == 0) return Results.BadRequest("Nenhuma imagem enviada.");
 
-    // 1. Processamento da Imagem e IA
-   using var ms = new MemoryStream();
+    // 1. Converter imagem para bytes e Processar na IA Local
+    using var ms = new MemoryStream();
     await foto.CopyToAsync(ms);
-    
-    // LINHA CORRETA:
-    var labelIngles = yolo.DetectarAlimento(ms.ToArray());
-    
-    if (labelIngles == "unknown") 
-        return Results.NotFound(new { mensagem = "Não consegui identificar nenhum alimento." });
+    byte[] bytesDaFoto = ms.ToArray();
 
-    var itensNaoComida = new[] { "fork", "knife", "spoon", "bowl", "dining table", "bottle", "cup", "chair" };
+    // O serviço agora já devolve "unknown" se detectar APENAS utensílios/fork/knife
+    string labelIngles = yolo.DetectarAlimento(bytesDaFoto);
 
-    if (itensNaoComida.Contains(labelIngles)) {
-        return Results.NotFound(new { mensagem = $"Detectamos apenas utensílios ({labelIngles}). Foque mais no alimento!" });
+    if (labelIngles == "unknown")
+    {
+        return Results.NotFound(new { 
+            mensagem = "A IA detectou apenas talheres ou cenários. Por favor, tente focar mais no alimento do seu prato!" 
+        });
     }
 
+    // 2. Consulta à API Internacional da USDA (Somente se for alimento válido)
+    var dadosNutri = await nutri.BuscarNutrientes(labelIngles);
+    if (dadosNutri == null) 
+    {
+        return Results.NotFound(new { mensagem = $"Não encontramos nutrientes para '{labelIngles}' no banco USDA." });
+    }
 
-    // 2. Consulta Nutricional
-    var dados = await nutri.BuscarNutrientes(labelIngles);
-    if (dados == null) return Results.NotFound();
-
+    // 3. Lógica de Negócio: Cálculo de Macronutrientes por Porção
     double multiplicador = porcao.ToLower() switch {
-        "pequeno" => 1.5, "medio" => 3.0, "grande" => 5.0,
+        "pequeno" => 1.5, // 150g
+        "medio" => 3.0,   // 300g
+        "grande" => 5.0,  // 500g
         _ => 3.0
     };
 
-    // Cálculos finais
-    var analiseFinal = new AnaliseIA {
+    // 4. Criar o objeto de Análise para persistir no Banco (Vínculo de 2 dias)
+    var analiseFinal = new ClassesBSFM.AnaliseIA
+    {
         UsuarioID = usuarioId,
         Alimento = labelIngles,
         Porcao = porcao,
-        Calorias = Math.Round(dados.Calorias100g * multiplicador, 2),
-        Proteinas = Math.Round(dados.Proteinas100g * multiplicador, 2),
-        Carbos = Math.Round(dados.Carbos100g * multiplicador, 2),
-        Gorduras = Math.Round(dados.Gorduras100g * multiplicador, 2),
-        DataAnalise = DateTime.Now // Ponto crucial para a expiração
+        Calorias = Math.Round(dadosNutri.Calorias100g * multiplicador, 2),
+        Proteinas = Math.Round(dadosNutri.Proteinas100g * multiplicador, 2),
+        Carbos = Math.Round(dadosNutri.Carbos100g * multiplicador, 2),
+        Gorduras = Math.Round(dadosNutri.Gorduras100g * multiplicador, 2),
+        DataAnalise = DateTime.Now // A limpeza apagará isso em 48h
     };
 
-    // 3. PERSISTÊNCIA NO BANCO (Validade 2 dias)
-    db.AnalisesIA.Add(analiseFinal);
-    await db.SaveChangesAsync();
+    // 5. Efetivar Salvamento no PostgreSQL do Railway
+    try 
+    {
+        db.AnalisesIA.Add(analiseFinal);
+        await db.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[DB ERROR] Falha ao persistir análise: {ex.Message}");
+        // Se o banco falhar, ainda devolvemos os dados pro usuário no front, só não ficará no histórico.
+    }
 
     return Results.Ok(new {
-        mensagem = "Análise salva com sucesso!",
+        sucesso = true,
+        mensagem = "Prato analisado com inteligência BSFM!",
         dados = analiseFinal
     });
 })
-.DisableAntiforgery(); // <--- ADICIONE ESTA LINHA AQUI
+.DisableAntiforgery(); // Obrigatório para evitar Erro 500/Anti-Forgery no Railway
 
 app.Run(); // FINAL DO ARQUIVO
 
