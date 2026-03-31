@@ -13,16 +13,19 @@ public class LimpezaAnalisesService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
+    {
+        try 
         {
             using (var scope = _serviceProvider.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
                 
-                // Pega a data de 2 dias atrás
-                var limite = DateTime.Now.AddDays(-2);
+                // GARANTIA: Cria as tabelas caso ainda não existam no Postgres
+                db.Database.EnsureCreated();
 
-                // Localiza análises expiradas
+                var limite = DateTime.Now.AddDays(-2);
                 var expiradas = await db.AnalisesIA
                     .Where(a => a.DataAnalise < limite)
                     .ToListAsync();
@@ -31,11 +34,16 @@ public class LimpezaAnalisesService : BackgroundService
                 {
                     db.AnalisesIA.RemoveRange(expiradas);
                     await db.SaveChangesAsync();
-                    Console.WriteLine($"[LIMPEZA] {expiradas.Count} análises antigas removidas.");
+                    Console.WriteLine($"[LIMPEZA] {expiradas.Count} registros removidos.");
                 }
             }
-            // Aguarda 1 hora antes de verificar de novo
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
+        catch (Exception ex)
+        {
+            // Evita que um erro de banco derrube o app inteiro
+            Console.WriteLine($"[ERRO LIMPEZA] Tabela pode não estar pronta: {ex.Message}");
+        }
+
+        await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
     }
 }

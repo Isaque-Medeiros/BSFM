@@ -55,6 +55,7 @@ namespace PonteBanco
         {
             // Ajuste para tabelas com nomes especiais
             modelBuilder.Entity<Refeição>().ToTable("Refeicoes");
+            modelBuilder.Entity<AnaliseIA>().ToTable("analises_ia");
         }
     }
 }
