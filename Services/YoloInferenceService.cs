@@ -56,6 +56,20 @@ namespace BSFM.Services
                     .Select(r => r.Label.Name.ToLower()) // Pega o nome do alimento
                     .Distinct() // Se tiver várias fatias de cenoura, retorna apenas 1 vez o termo "carrot"
                     .ToList();
+                                var labelsBrutos = results
+                    .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
+                    .Select(r => r.Label.Name.ToLower())
+                    .Distinct()
+                    .ToList();
+
+                // TRADUÇÃO AQUI: Se o nome estiver no tradutor, usa a tradução, senão usa o original
+                foreach (var nomeEn in labelsBrutos)
+                {
+                    string nomePt = Tradutor.ContainsKey(nomeEn) ? Tradutor[nomeEn] : nomeEn;
+                    listaDetectada.Add(nomePt);
+                }
+
+                return listaDetectada;
 
                 if (listaDetectada.Any())
                 {
@@ -85,28 +99,6 @@ namespace BSFM.Services
             { "cake", "Bolo" }
         };
 
-        public List<string> DetectarAlimentos(byte[] imageBytes)
-        {
-            var listaDetectada = new List<string>();
-            try {
-                // ... manter código da captura SkiaSharp e RunObjectDetection ...
-
-                var labelsBrutos = results
-                    .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
-                    .Select(r => r.Label.Name.ToLower())
-                    .Distinct()
-                    .ToList();
-
-                // TRADUÇÃO AQUI: Se o nome estiver no tradutor, usa a tradução, senão usa o original
-                foreach (var nomeEn in labelsBrutos)
-                {
-                    string nomePt = Tradutor.ContainsKey(nomeEn) ? Tradutor[nomeEn] : nomeEn;
-                    listaDetectada.Add(nomePt);
-                }
-
-                return listaDetectada;
-            }
-            catch { return listaDetectada; }
         }
     }
 }
