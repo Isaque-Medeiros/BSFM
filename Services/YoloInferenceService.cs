@@ -3,6 +3,7 @@ using YoloDotNet.Enums;
 using YoloDotNet.Models;
 using SkiaSharp;
 using System.Linq;
+using System.Collections.Generic; // ADICIONADO: Necessário para listas
 
 namespace BSFM.Services
 {
@@ -10,8 +11,7 @@ namespace BSFM.Services
     {
         private readonly Yolo _yolo;
 
-        // LISTA BRANCA: Apenas esses itens do YOLO serão enviados para o cálculo de calorias.
-        // O modelo COCO (yolov10) reconhece nativamente esses 10 itens de comida.
+        // LISTA BRANCA: O YOLO v10 Oficial (COCO) reconhece esses itens nutricionais.
         private static readonly string[] AlimentosPermitidos = {
             "banana", "apple", "sandwich", "orange", "broccoli", 
             "carrot", "hot dog", "pizza", "donut", "cake"
@@ -19,57 +19,94 @@ namespace BSFM.Services
 
         public YoloInferenceService()
         {
-            // Caminho dinâmico para garantir que funcione em Windows (Local) e Linux (Railway)
             var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolov10n.onnx");
 
             var options = new YoloOptions
             {
                 OnnxModel = modelPath,
                 ModelType = ModelType.ObjectDetection,
-                Cuda = false, // Garante uso da CPU (mais estável para servidores gratuitos)
+                Cuda = false, 
                 GpuId = 0,
             };
 
             _yolo = new Yolo(options);
-            Console.WriteLine($"[IA] Modelo carregado com sucesso: {modelPath}");
         }
 
-        public string DetectarAlimento(byte[] imageBytes)
+        // ALTERADO: Agora retorna uma Lista de strings (Vários alimentos)
+        public List<string> DetectarAlimentos(byte[] imageBytes)
         {
+            var listaDetectada = new List<string>();
+
             try 
             {
-                if (imageBytes == null || imageBytes.Length == 0) return "unknown";
+                if (imageBytes == null || imageBytes.Length == 0) return listaDetectada;
 
                 using var ms = new MemoryStream(imageBytes);
                 using var image = SKImage.FromEncodedData(ms);
                 
-                if (image == null) return "unknown";
+                if (image == null) return listaDetectada;
 
-                // Executa detecção com 35% de confiança mínima para evitar 'vultos' ou sombras.
+                // Executa detecção (Confidence 0.35 para ser preciso)
                 var results = _yolo.RunObjectDetection(image, 0.35);
 
-                // FILTRO INTELIGENTE:
-                // 1. Filtra resultados para manter APENAS o que está na nossa lista de comida.
-                // 2. Ordena pela maior confiança da IA.
-                var alimentoEncontrado = results
+                // FILTRO DE MULTI-DETECÇÃO:
+                // Pegamos todos os itens que estão na nossa lista permitida de uma só vez
+                listaDetectada = results
                     .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
-                    .OrderByDescending(r => r.Confidence)
-                    .FirstOrDefault();
+                    .Select(r => r.Label.Name.ToLower()) // Pega o nome do alimento
+                    .Distinct() // Se tiver várias fatias de cenoura, retorna apenas 1 vez o termo "carrot"
+                    .ToList();
 
-                if (alimentoEncontrado != null)
+                if (listaDetectada.Any())
                 {
-                    Console.WriteLine($"[IA SUCCESS] Detectado: {alimentoEncontrado.Label.Name} ({Math.Round(alimentoEncontrado.Confidence * 100, 1)}%)");
-                    return alimentoEncontrado.Label.Name.ToLower();
+                    Console.WriteLine($"[IA SUCCESS] Alimentos detectados no prato: {string.Join(", ", listaDetectada)}");
                 }
 
-                Console.WriteLine("[IA INFO] Nenhum alimento permitido detectado na imagem.");
-                return "unknown";
+                return listaDetectada;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[IA FATAL ERROR] Erro na inferência: {ex.Message}");
-                return "unknown";
+                Console.WriteLine($"[IA FATAL ERROR] Erro na multi-inferência: {ex.Message}");
+                return listaDetectada;
             }
+        }
+
+        private static readonly Dictionary<string, string> Tradutor = new Dictionary<string, string>
+        {
+            { "banana", "Banana" },
+            { "apple", "Maçã" },
+            { "sandwich", "Sanduíche" },
+            { "orange", "Laranja" },
+            { "broccoli", "Brócolis" },
+            { "carrot", "Cenoura" },
+            { "hot dog", "Cachorro Quente" },
+            { "pizza", "Pizza" },
+            { "donut", "Donut" },
+            { "cake", "Bolo" }
+        };
+
+        public List<string> DetectarAlimentos(byte[] imageBytes)
+        {
+            var listaDetectada = new List<string>();
+            try {
+                // ... manter código da captura SkiaSharp e RunObjectDetection ...
+
+                var labelsBrutos = results
+                    .Where(r => AlimentosPermitidos.Contains(r.Label.Name.ToLower()))
+                    .Select(r => r.Label.Name.ToLower())
+                    .Distinct()
+                    .ToList();
+
+                // TRADUÇÃO AQUI: Se o nome estiver no tradutor, usa a tradução, senão usa o original
+                foreach (var nomeEn in labelsBrutos)
+                {
+                    string nomePt = Tradutor.ContainsKey(nomeEn) ? Tradutor[nomeEn] : nomeEn;
+                    listaDetectada.Add(nomePt);
+                }
+
+                return listaDetectada;
+            }
+            catch { return listaDetectada; }
         }
     }
 }

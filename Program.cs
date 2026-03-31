@@ -136,71 +136,51 @@ app.MapPost("/analisar-prato", async (
     BSFM.Services.UsdaNutritionService nutri, 
     PonteBanco.BSFMContext db) => 
 {
-    // Validação Inicial (Segurança)
-    if (foto == null || foto.Length == 0) return Results.BadRequest("Nenhuma imagem enviada.");
-
-    // 1. Converter imagem para bytes e Processar na IA Local
     using var ms = new MemoryStream();
     await foto.CopyToAsync(ms);
-    byte[] bytesDaFoto = ms.ToArray();
+    
+    // 1. Chamar a NOVA função de Multi-detecção
+    var alimentosEncontrados = yolo.DetectarAlimentos(ms.ToArray());
 
-    // O serviço agora já devolve "unknown" se detectar APENAS utensílios/fork/knife
-    string labelIngles = yolo.DetectarAlimento(bytesDaFoto);
+    if (alimentosEncontrados.Count == 0) 
+        return Results.NotFound(new { mensagem = "Não identifiquei alimentos conhecidos no prato." });
 
-    if (labelIngles == "unknown")
+    // Variáveis para acumular o valor total do prato
+    double caloriasTotal = 0, protTotal = 0, carbTotal = 0, gordTotal = 0;
+
+    // 2. Loop: Somar nutrição de todos os itens vistos pela IA
+    foreach (var item in alimentosEncontrados)
     {
-        return Results.NotFound(new { 
-            mensagem = "A IA detectou apenas talheres ou cenários. Por favor, tente focar mais no alimento do seu prato!" 
-        });
+        var d = await nutri.BuscarNutrientes(item);
+        if (d != null) 
+        {
+            double mult = porcao.ToLower() switch { "pequeno" => 1.5, "medio" => 3.0, "grande" => 5.0, _ => 3.0 };
+            caloriasTotal += (d.Calorias100g * mult);
+            protTotal += (d.Proteinas100g * mult);
+            carbTotal += (d.Carbos100g * mult);
+            gordTotal += (d.Gorduras100g * mult);
+        }
+        string traducaoPt = BSFM.Services.YoloInferenceService.Traducao.GetValueOrDefault(nomeEn, nomeEn);
+        listaNomesPt.Add(traducaoPt);
     }
 
-    // 2. Consulta à API Internacional da USDA (Somente se for alimento válido)
-    var dadosNutri = await nutri.BuscarNutrientes(labelIngles);
-    if (dadosNutri == null) 
-    {
-        return Results.NotFound(new { mensagem = $"Não encontramos nutrientes para '{labelIngles}' no banco USDA." });
-    }
-
-    // 3. Lógica de Negócio: Cálculo de Macronutrientes por Porção
-    double multiplicador = porcao.ToLower() switch {
-        "pequeno" => 1.5, // 150g
-        "medio" => 3.0,   // 300g
-        "grande" => 5.0,  // 500g
-        _ => 3.0
-    };
-
-    // 4. Criar o objeto de Análise para persistir no Banco (Vínculo de 2 dias)
-    var analiseFinal = new ClassesBSFM.AnaliseIA
-    {
+    // 3. Criar registro único do prato com a soma de tudo
+    var analiseFinal = new ClassesBSFM.AnaliseIA {
         UsuarioID = usuarioId,
-        Alimento = labelIngles,
+        Alimento = string.Join(", ", alimentosEncontrados), // Ex: "carrot, broccoli"
         Porcao = porcao,
-        Calorias = Math.Round(dadosNutri.Calorias100g * multiplicador, 2),
-        Proteinas = Math.Round(dadosNutri.Proteinas100g * multiplicador, 2),
-        Carbos = Math.Round(dadosNutri.Carbos100g * multiplicador, 2),
-        Gorduras = Math.Round(dadosNutri.Gorduras100g * multiplicador, 2),
-        DataAnalise = DateTime.Now // A limpeza apagará isso em 48h
+        Calorias = Math.Round(caloriasTotal, 2),
+        Proteinas = Math.Round(protTotal, 2),
+        Carbos = Math.Round(carbTotal, 2),
+        Gorduras = Math.Round(gordTotal, 2),
+        DataAnalise = DateTime.Now
     };
 
-    // 5. Efetivar Salvamento no PostgreSQL do Railway
-    try 
-    {
-        db.AnalisesIA.Add(analiseFinal);
-        await db.SaveChangesAsync();
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[DB ERROR] Falha ao persistir análise: {ex.Message}");
-        // Se o banco falhar, ainda devolvemos os dados pro usuário no front, só não ficará no histórico.
-    }
+    db.AnalisesIA.Add(analiseFinal);
+    await db.SaveChangesAsync();
 
-    return Results.Ok(new {
-        sucesso = true,
-        mensagem = "Prato analisado com inteligência BSFM!",
-        dados = analiseFinal
-    });
-})
-.DisableAntiforgery(); // Obrigatório para evitar Erro 500/Anti-Forgery no Railway
+    return Results.Ok(new { dados = analiseFinal });
+}).DisableAntiforgery();
 
 app.Run(); // FINAL DO ARQUIVO
 
