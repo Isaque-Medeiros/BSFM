@@ -8,6 +8,7 @@ using System.Linq;
 using BSFM.Services; 
 using Microsoft.AspNetCore.Http;
 using System.IO;
+using Microsoft.AspNetCore.Mvc;
 
 // Correção para trabalhar com datas no PostgreSQL (comum no Railway)
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);

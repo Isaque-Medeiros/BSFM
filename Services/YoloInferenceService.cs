@@ -15,7 +15,7 @@ namespace BSFM.Services
             _modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolo11n.onnx");
             
             // Instancia o Yolo para rodar em CPU (Zero Custo GPU)
-            _yolo = new Yolo(_modelPath, false); 
+            _yolo = new Yolo(_modelPath); 
         }
 
         public string DetectarAlimento(byte[] imageBytes)

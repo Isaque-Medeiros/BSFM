@@ -42,7 +42,7 @@ namespace BSFM.Services
 
     // Classes auxiliares para mapear o JSON complexo da USDA
     public class NutrientesDTO {
-        public string NomeOriginal { get; set; }
+        public string NomeOriginal { get; set; } = string.Empty; // Iniciamos vazio para evitar aviso
         public double Calorias100g { get; set; }
         public double Proteinas100g { get; set; }
         public double Carbos100g { get; set; }
@@ -50,12 +50,14 @@ namespace BSFM.Services
     }
 
     public class UsdaResponse {
-        public List<UsdaFoodItem> Foods { get; set; }
+        public List<UsdaFoodItem>? Foods { get; set; } // O ponto de interrogação diz que pode ser nulo
     }
+
     public class UsdaFoodItem {
-        public string Description { get; set; }
-        public List<UsdaNutrient> FoodNutrients { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public List<UsdaNutrient>? FoodNutrients { get; set; }
     }
+
     public class UsdaNutrient {
         public int NutrientId { get; set; }
         public double Value { get; set; }
