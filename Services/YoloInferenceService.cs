@@ -20,7 +20,6 @@ namespace BSFM.Services
                 ModelType = ModelType.ObjectDetection, // Define que o modelo é para detectar objetos
                 Cuda = false, // Força o uso da CPU (Ideal para ARM Oracle Cloud sem GPU)
                 GpuId = 0,
-                Prime = false
             };
 
             _yolo = new Yolo(options);
