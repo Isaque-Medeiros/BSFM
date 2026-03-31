@@ -30,13 +30,13 @@ namespace BSFM.Services
 
             // Extração segura de macronutrientes por 100g
             return new NutrientesDTO
-            {
-                NomeOriginal = food.Description,
-                Calorias100g = food.FoodNutrients.FirstOrDefault(n => n.NutrientId == 1008)?.Value ?? 0,
-                Proteinas100g = food.FoodNutrients.FirstOrDefault(n => n.NutrientId == 1003)?.Value ?? 0,
-                Carbos100g = food.FoodNutrients.FirstOrDefault(n => n.NutrientId == 1005)?.Value ?? 0,
-                Gorduras100g = food.FoodNutrients.FirstOrDefault(n => n.NutrientId == 1004)?.Value ?? 0
-            };
+        {
+            NomeOriginal = food.Description,
+            Calorias100g = food.FoodNutrients?.FirstOrDefault(n => n.NutrientId == 1008)?.Value ?? 0,
+            Proteinas100g = food.FoodNutrients?.FirstOrDefault(n => n.NutrientId == 1003)?.Value ?? 0,
+            Carbos100g = food.FoodNutrients?.FirstOrDefault(n => n.NutrientId == 1005)?.Value ?? 0,
+            Gorduras100g = food.FoodNutrients?.FirstOrDefault(n => n.NutrientId == 1004)?.Value ?? 0
+        };
         }
     }
 

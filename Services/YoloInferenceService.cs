@@ -1,21 +1,29 @@
 using YoloDotNet;
 using YoloDotNet.Enums;
-using SkiaSharp; // O YoloDotNet usa Skia para processamento de imagem
+using YoloDotNet.Models; // ADICIONADO: Necessário para YoloOptions
+using SkiaSharp;
 
 namespace BSFM.Services
 {
     public class YoloInferenceService
     {
         private readonly Yolo _yolo;
-        private readonly string _modelPath;
 
         public YoloInferenceService()
         {
-            // Caminho relativo ao executável para rodar em Docker/Linux
-            _modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolo11n.onnx");
-            
-            // Instancia o Yolo para rodar em CPU (Zero Custo GPU)
-            _yolo = new Yolo(_modelPath); 
+            var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolov11n.onnx");
+
+            // NOVA FORMA DE INICIALIZAR NA VERSÃO 2.0+
+            var options = new YoloOptions
+            {
+                OnnxModel = modelPath,
+                ModelType = ModelType.ObjectDetection, // Define que o modelo é para detectar objetos
+                Cuda = false, // Força o uso da CPU (Ideal para ARM Oracle Cloud sem GPU)
+                GpuId = 0,
+                Prime = false
+            };
+
+            _yolo = new Yolo(options);
         }
 
         public string DetectarAlimento(byte[] imageBytes)
@@ -23,16 +31,13 @@ namespace BSFM.Services
             using var ms = new MemoryStream(imageBytes);
             using var image = SKImage.FromEncodedData(ms);
             
-            // Realiza a inferência (Yolov11 usa tipagem ObjectDetection)
-            var results = _yolo.RunObjectDetection(image, 0.25d); // 0.25 é o threshold de confiança
+            // Inferência com 0.25 de threshold de confiança
+            var results = _yolo.RunObjectDetection(image, 0.25);
 
-            // Retorna o item com maior confiança que esteja na categoria "comida" simplificada do COCO
-            // Exemplos de labels COCO: "apple", "banana", "sandwich", "orange", "broccoli", "carrot", "pizza", "donut", "cake"
+            // Pega o rótulo com maior confiança
             var detectado = results.OrderByDescending(x => x.Confidence).FirstOrDefault();
 
             return detectado?.Label.Name ?? "unknown";
         }
     }
-
-
 }
