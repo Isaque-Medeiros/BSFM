@@ -139,19 +139,24 @@ app.MapPost("/analisar-prato", async (
     using var ms = new MemoryStream();
     await foto.CopyToAsync(ms);
     
-    // 1. Chamar a NOVA função de Multi-detecção
-    var alimentosEncontrados = yolo.DetectarAlimentos(ms.ToArray());
+    // 1. Chamar a IA (Este método já devolve em Português: "Cenoura", "Maçã"...)
+    var alimentosPt = yolo.DetectarAlimentos(ms.ToArray());
 
-    if (alimentosEncontrados.Count == 0) 
-        return Results.NotFound(new { mensagem = "Não identifiquei alimentos conhecidos no prato." });
+    if (alimentosPt.Count == 0) 
+        return Results.NotFound(new { mensagem = "Não identifiquei alimentos no prato." });
 
-    // Variáveis para acumular o valor total do prato
     double caloriasTotal = 0, protTotal = 0, carbTotal = 0, gordTotal = 0;
 
-    // 2. Loop: Somar nutrição de todos os itens vistos pela IA
-    foreach (var item in alimentosEncontrados)
+    // 2. Loop para cada alimento detectado
+    foreach (var nomePt in alimentosPt)
     {
-        var d = await nutri.BuscarNutrientes(item);
+        // 2.1 TRADUÇÃO REVERSA: Precisamos do nome em Inglês para a API do USDA entender!
+        // Procuramos no seu dicionário o nome original em inglês (Key) usando o nome em PT (Value)
+        string nomeEn = BSFM.Services.YoloInferenceService.Tradutor
+                        .FirstOrDefault(x => x.Value == nomePt).Key ?? nomePt;
+
+        // 2.2 Busca nutricional com o nome original em INGLÊS (Ex: carrot)
+        var d = await nutri.BuscarNutrientes(nomeEn);
         if (d != null) 
         {
             double mult = porcao.ToLower() switch { "pequeno" => 1.5, "medio" => 3.0, "grande" => 5.0, _ => 3.0 };
@@ -160,14 +165,12 @@ app.MapPost("/analisar-prato", async (
             carbTotal += (d.Carbos100g * mult);
             gordTotal += (d.Gorduras100g * mult);
         }
-        string traducaoPt = BSFM.Services.YoloInferenceService.Traducao.GetValueOrDefault(nomeEn, nomeEn);
-        listaNomesPt.Add(traducaoPt);
     }
 
-    // 3. Criar registro único do prato com a soma de tudo
+    // 3. Criar registro final com a lista de alimentos em PORTUGUÊS para o Banco
     var analiseFinal = new ClassesBSFM.AnaliseIA {
         UsuarioID = usuarioId,
-        Alimento = string.Join(", ", alimentosEncontrados), // Ex: "carrot, broccoli"
+        Alimento = string.Join(", ", alimentosPt), // Salva como "Cenoura, Brócolis"
         Porcao = porcao,
         Calorias = Math.Round(caloriasTotal, 2),
         Proteinas = Math.Round(protTotal, 2),
@@ -176,8 +179,12 @@ app.MapPost("/analisar-prato", async (
         DataAnalise = DateTime.Now
     };
 
-    db.AnalisesIA.Add(analiseFinal);
-    await db.SaveChangesAsync();
+    try {
+        db.AnalisesIA.Add(analiseFinal);
+        await db.SaveChangesAsync();
+    } catch (Exception ex) {
+        Console.WriteLine($"[AVISO BANCO] Erro ao salvar análise: {ex.Message}");
+    }
 
     return Results.Ok(new { dados = analiseFinal });
 }).DisableAntiforgery();
