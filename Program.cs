@@ -174,7 +174,8 @@ app.MapPost("/analisar-prato", async (
         mensagem = "Análise salva com sucesso!",
         dados = analiseFinal
     });
-});
+})
+.DisableAntiforgery(); // <--- ADICIONE ESTA LINHA AQUI
 
 app.Run(); // FINAL DO ARQUIVO
 
