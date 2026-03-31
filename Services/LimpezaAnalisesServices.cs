@@ -47,3 +47,4 @@ public class LimpezaAnalisesService : BackgroundService
         await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
     }
 }
+}
