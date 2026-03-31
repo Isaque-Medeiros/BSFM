@@ -25,6 +25,7 @@ builder.Services.AddCors(options => {
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
+builder.Services.AddHostedService<LimpezaAnalisesService>(); 
 builder.Services.AddSingleton<BSFM.Services.YoloInferenceService>();
 builder.Services.AddHttpClient<BSFM.Services.UsdaNutritionService>();
 builder.Services.AddDbContext<BSFMContext>();
@@ -82,7 +83,7 @@ app.MapPost("/login", (LoginDTO dadosLogin) => {
     var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
     var user = db.Usuarios.FirstOrDefault(u => u.Email.ToLower() == dadosLogin.Email.Trim().ToLower());
     if (user != null && BCrypt.Net.BCrypt.Verify(dadosLogin.Senha, user.SenhaHash)) {
-        return Results.Ok(new { nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal }); 
+        return Results.Ok(new { id = user.ID, nome = user.Nome, imc = user.IMC, tmb = user.TMB, gasto = user.GastoTotal }); 
     }
     return Results.Json(new { mensagem = "E-mail ou senha incorretos." }, statusCode: 400);
 });
@@ -128,43 +129,50 @@ app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
     return Results.Ok(new { mensagem = "Senha atualizada com sucesso!" });
 });
 // Outras rotas permanecem...
-app.MapPost("/analisar-prato", async ([FromForm] IFormFile foto, [FromForm] string porcao, BSFM.Services.YoloInferenceService yolo, BSFM.Services.UsdaNutritionService nutri) => 
+aapp.MapPost("/analisar-prato", async (
+    [FromForm] IFormFile foto, 
+    [FromForm] string porcao, 
+    [FromForm] int usuarioId, // NOVO: Recebido do JS do Dashboard
+    BSFM.Services.YoloInferenceService yolo, 
+    BSFM.Services.UsdaNutritionService nutri,
+    BSFMContext db) => // Injeta o contexto do banco
 {
-    if (foto == null || foto.Length == 0) return Results.BadRequest("Nenhuma imagem enviada.");
+    if (foto == null || foto.Length == 0) return Results.BadRequest("Imagem inválida.");
 
-    // Validação de Integridade: Segurança (CIA - Integrity)
-    if (foto.Length > 5 * 1024 * 1024) return Results.BadRequest("Imagem muito grande (Max 5MB)");
-
-    // 1. Receber bytes
+    // 1. Processamento da Imagem e IA
     using var ms = new MemoryStream();
     await foto.CopyToAsync(ms);
-    var imagemBytes = ms.ToArray();
+    var labelIngles = yolo.DetectarAlimento(ms.ToArray());
+    if (labelIngles == "unknown") return Results.NotFound(new { mensagem = "Não identificado." });
 
-    // 2. IA LOCAL - Detecção (Latência quase zero)
-    var labelIngles = yolo.DetectarAlimento(imagemBytes);
-    if (labelIngles == "unknown") return Results.NotFound(new { mensagem = "Não consegui identificar nenhum alimento no prato." });
+    // 2. Consulta Nutricional
+    var dados = await nutri.BuscarNutrientes(labelIngles);
+    if (dados == null) return Results.NotFound();
 
-    // 3. API USDA - Nutrientes por 100g
-    var dadosNutricionais = await nutri.BuscarNutrientes(labelIngles);
-    if (dadosNutricionais == null) return Results.NotFound(new { mensagem = "Nutrientes não encontrados para: " + labelIngles });
-
-    // 4. Regra de Negócio: Mapeamento de Porção (Calculo Nutricional)
     double multiplicador = porcao.ToLower() switch {
-        "pequeno" => 1.5,   // ~150g
-        "medio" => 3.0,     // ~300g
-        "grande" => 5.0,    // ~500g
-        _ => double.TryParse(porcao, out var g) ? g / 100.0 : 3.0
+        "pequeno" => 1.5, "medio" => 3.0, "grande" => 5.0,
+        _ => 3.0
     };
 
-    // 5. Retorno JSON Final
+    // Cálculos finais
+    var analiseFinal = new AnaliseIA {
+        UsuarioID = usuarioId,
+        Alimento = labelIngles,
+        Porcao = porcao,
+        Calorias = Math.Round(dados.Calorias100g * multiplicador, 2),
+        Proteinas = Math.Round(dados.Proteinas100g * multiplicador, 2),
+        Carbos = Math.Round(dados.Carbos100g * multiplicador, 2),
+        Gorduras = Math.Round(dados.Gorduras100g * multiplicador, 2),
+        DataAnalise = DateTime.Now // Ponto crucial para a expiração
+    };
+
+    // 3. PERSISTÊNCIA NO BANCO (Validade 2 dias)
+    db.AnalisesIA.Add(analiseFinal);
+    await db.SaveChangesAsync();
+
     return Results.Ok(new {
-        AlimentoDetectado = labelIngles,
-        PorcaoReferencia = porcao,
-        CalculadoParaGramas = multiplicador * 100,
-        CaloriasTotais = Math.Round(dadosNutricionais.Calorias100g * multiplicador, 2),
-        Proteinas = Math.Round(dadosNutricionais.Proteinas100g * multiplicador, 2),
-        Carboidratos = Math.Round(dadosNutricionais.Carbos100g * multiplicador, 2),
-        Gorduras = Math.Round(dadosNutricionais.Gorduras100g * multiplicador, 2)
+        mensagem = "Análise salva com sucesso!",
+        dados = analiseFinal
     });
 });
 

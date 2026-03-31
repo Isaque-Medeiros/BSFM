@@ -196,6 +196,20 @@ namespace ClassesBSFM
             });
         }
     }
+    public class AnaliseIA
+{
+    [Key]
+    public int ID { get; set; }
+    
+    public int UsuarioID { get; set; } // Vínculo com o usuário
+    public string Alimento { get; set; } = string.Empty;
+    public double Calorias { get; set; }
+    public double Proteinas { get; set; }
+    public double Carbos { get; set; }
+    public double Gorduras { get; set; }
+    public string Porcao { get; set; } = string.Empty;
+    public DateTime DataAnalise { get; set; } = DateTime.Now; // Usado para exclusão
+}
 }
 
 
