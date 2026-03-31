@@ -129,7 +129,7 @@ app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
     return Results.Ok(new { mensagem = "Senha atualizada com sucesso!" });
 });
 // Outras rotas permanecem...
-aapp.MapPost("/analisar-prato", async (
+app.MapPost("/analisar-prato", async (
     [FromForm] IFormFile foto, 
     [FromForm] string porcao, 
     [FromForm] int usuarioId, // NOVO: Recebido do JS do Dashboard
