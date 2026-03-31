@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Hosting;
 using ClassesBSFM;
 using PonteBanco;
 using System.Linq;
+using BSFM.Services; 
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
 // Correção para trabalhar com datas no PostgreSQL (comum no Railway)
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -124,7 +127,7 @@ app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
     return Results.Ok(new { mensagem = "Senha atualizada com sucesso!" });
 });
 // Outras rotas permanecem...
-app.MapPost("/analisar-prato", async (IFormFile foto, string porcao, BSFM.Services.YoloInferenceService yolo, BSFM.Services.UsdaNutritionService nutri) => 
+app.MapPost("/analisar-prato", async ([FromForm] IFormFile foto, [FromForm] string porcao, BSFM.Services.YoloInferenceService yolo, BSFM.Services.UsdaNutritionService nutri) => 
 {
     if (foto == null || foto.Length == 0) return Results.BadRequest("Nenhuma imagem enviada.");
 
