@@ -31,18 +31,17 @@ builder.Services.AddHttpClient<BSFM.Services.UsdaNutritionService>();
 builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
+using (var scope = app.Services.CreateScope()) {
+    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
+    Console.WriteLine("[POSTGRES] Garantindo criação de tabelas...");
+    db.Database.EnsureCreated(); // Isso vai criar 'analises_ia' forçadamente agora.
+}
 
 app.UseCors("PermitirSite");
 
 // --- COMANDOS PARA O SITE FUNCIONAR ---
 app.UseDefaultFiles(); // Faz o sistema procurar pelo index.html ou login.html automaticamente
 app.UseStaticFiles();  // Importante: Entrega arquivos dentro da pasta 'wwwroot'
-
-// Inicializar o Banco de Dados com Segurança
-using (var scope = app.Services.CreateScope()) {
-    var db = scope.ServiceProvider.GetRequiredService<BSFMContext>();
-    db.Database.EnsureCreated();
-}
 
 // Rota para a Página Inicial (Fallback caso o DefaultFiles não pegue)
 app.MapGet("/", (IWebHostEnvironment env) => 
@@ -140,10 +139,21 @@ app.MapPost("/analisar-prato", async (
     if (foto == null || foto.Length == 0) return Results.BadRequest("Imagem inválida.");
 
     // 1. Processamento da Imagem e IA
-    using var ms = new MemoryStream();
+   using var ms = new MemoryStream();
     await foto.CopyToAsync(ms);
+    
+    // LINHA CORRETA:
     var labelIngles = yolo.DetectarAlimento(ms.ToArray());
-    if (labelIngles == "unknown") return Results.NotFound(new { mensagem = "Não identificado." });
+    
+    if (labelIngles == "unknown") 
+        return Results.NotFound(new { mensagem = "Não consegui identificar nenhum alimento." });
+
+    var itensNaoComida = new[] { "fork", "knife", "spoon", "bowl", "dining table", "bottle", "cup", "chair" };
+
+    if (itensNaoComida.Contains(labelIngles)) {
+        return Results.NotFound(new { mensagem = $"Detectamos apenas utensílios ({labelIngles}). Foque mais no alimento!" });
+    }
+
 
     // 2. Consulta Nutricional
     var dados = await nutri.BuscarNutrientes(labelIngles);

@@ -25,17 +25,30 @@ namespace BSFM.Services
             _yolo = new Yolo(options);
         }
 
-        public string DetectarAlimento(byte[] imageBytes)
-        {
+        public string DetectarAlimento(byte[] imageBytes) {
             using var ms = new MemoryStream(imageBytes);
             using var image = SKImage.FromEncodedData(ms);
             
-            // Inferência com 0.25 de threshold de confiança
+            // Roda a detecção normal (IA verá o prato, talheres, etc)
             var results = _yolo.RunObjectDetection(image, 0.25);
 
-            // Pega o rótulo com maior confiança
-            var detectado = results.OrderByDescending(x => x.Confidence).FirstOrDefault();
+            // LISTA DE ITENS QUE SÃO COMIDA NO DATASET (Dataset COCO)
+            var itensComidaValidos = new[] { 
+                "person", "bicycle", "car", // ... (outros itens que o YOLO detecta mas queremos ignorar)
+                "apple", "banana", "orange", "broccoli", "carrot", "hot dog", "pizza", 
+                "donut", "cake", "sandwich" 
+            };
+            
+            // LISTA DE UTENSÍLIOS PARA REJEITAR EXPLICITAMENTE
+            var utensilios = new[] { "fork", "knife", "spoon", "bowl", "cup", "bottle", "dining table", "chair" };
 
+            // Pegamos o item com maior confiança, DESDE QUE ele não seja um utensílio!
+            var detectado = results
+                .Where(x => !utensilios.Contains(x.Label.Name.ToLower())) // FILTRO AQUI
+                .OrderByDescending(x => x.Confidence)
+                .FirstOrDefault();
+
+            // Se ele só detectou garfos e facas, ou nada, retornamos unknown
             return detectado?.Label.Name ?? "unknown";
         }
     }
