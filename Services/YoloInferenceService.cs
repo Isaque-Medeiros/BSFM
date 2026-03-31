@@ -11,7 +11,7 @@ namespace BSFM.Services
 
         public YoloInferenceService()
         {
-            var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolov11n.onnx");
+            var modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "yolo11n.onnx");
 
             // NOVA FORMA DE INICIALIZAR NA VERSÃO 2.0+
             var options = new YoloOptions
