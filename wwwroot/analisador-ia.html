@@ -191,14 +191,21 @@
 
                 if (response.ok) {
                     const resJson = await response.json();
-                    const info = resJson.dados; // A propriedade "dados" foi definida na sugestão anterior do backend
+                    const info = resJson.dados;
 
-                    document.getElementById('labelAlimento').innerText = info.alimento;
+                    // Melhora a visualização da lista de alimentos
+                    const displayAlimentos = info.alimento || "Alimento não identificado";
+                    document.getElementById('labelAlimento').innerText = displayAlimentos;
+                    
                     document.getElementById('kcal').innerText = info.calorias + " kcal";
-                    document.getElementById('macros-short').innerText = `Prot: ${info.proteinas}g | Carb: ${info.carbos}g | Gord: ${info.gorduras}g`;
+
+                    // Se vierem múltiplos macros do banco, exibe a soma
+                    document.getElementById('macros-short').innerHTML = 
+                        `P: <span class="text-white">${info.proteinas}g</span> | ` +
+                        `C: <span class="text-white">${info.carbos}g</span> | ` +
+                        `G: <span class="text-white">${info.gorduras}g</span>`;
                     
                     document.getElementById('resultado').classList.remove('hidden');
-                    // Rola até o resultado suavemente
                     document.getElementById('resultado').scrollIntoView({ behavior: 'smooth' });
                 } else {
                     alert("A IA não detectou um alimento visível ou não mapeado. Tente outra posição.");
