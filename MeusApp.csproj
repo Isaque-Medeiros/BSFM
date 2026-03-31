@@ -13,14 +13,19 @@
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="MailKit" Version="4.10.0" />
     <PackageReference Include="MimeKit" Version="4.10.0" />
+    <PackageReference Include="YoloDotNet" Version="2.0.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.19.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.19.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Isso garante que os HTMLs na raiz sejam copiados para a pasta de saída do Railway -->
     <Content Include="*.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      
     </Content>
+    <None Update="Models\yolo11n.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

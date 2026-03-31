@@ -21,6 +21,8 @@ builder.Services.AddCors(options => {
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
+builder.Services.AddSingleton<BSFM.Services.YoloInferenceService>();
+builder.Services.AddHttpClient<BSFM.Services.UsdaNutritionService>();
 builder.Services.AddDbContext<BSFMContext>();
 
 var app = builder.Build();
@@ -122,6 +124,45 @@ app.MapPost("/redefinir-senha", (RedefinicaoSenhaDTO req) => {
     return Results.Ok(new { mensagem = "Senha atualizada com sucesso!" });
 });
 // Outras rotas permanecem...
+app.MapPost("/analisar-prato", async (IFormFile foto, string porcao, BSFM.Services.YoloInferenceService yolo, BSFM.Services.UsdaNutritionService nutri) => 
+{
+    if (foto == null || foto.Length == 0) return Results.BadRequest("Nenhuma imagem enviada.");
+
+    // Validação de Integridade: Segurança (CIA - Integrity)
+    if (foto.Length > 5 * 1024 * 1024) return Results.BadRequest("Imagem muito grande (Max 5MB)");
+
+    // 1. Receber bytes
+    using var ms = new MemoryStream();
+    await foto.CopyToAsync(ms);
+    var imagemBytes = ms.ToArray();
+
+    // 2. IA LOCAL - Detecção (Latência quase zero)
+    var labelIngles = yolo.DetectarAlimento(imagemBytes);
+    if (labelIngles == "unknown") return Results.NotFound(new { mensagem = "Não consegui identificar nenhum alimento no prato." });
+
+    // 3. API USDA - Nutrientes por 100g
+    var dadosNutricionais = await nutri.BuscarNutrientes(labelIngles);
+    if (dadosNutricionais == null) return Results.NotFound(new { mensagem = "Nutrientes não encontrados para: " + labelIngles });
+
+    // 4. Regra de Negócio: Mapeamento de Porção (Calculo Nutricional)
+    double multiplicador = porcao.ToLower() switch {
+        "pequeno" => 1.5,   // ~150g
+        "medio" => 3.0,     // ~300g
+        "grande" => 5.0,    // ~500g
+        _ => double.TryParse(porcao, out var g) ? g / 100.0 : 3.0
+    };
+
+    // 5. Retorno JSON Final
+    return Results.Ok(new {
+        AlimentoDetectado = labelIngles,
+        PorcaoReferencia = porcao,
+        CalculadoParaGramas = multiplicador * 100,
+        CaloriasTotais = Math.Round(dadosNutricionais.Calorias100g * multiplicador, 2),
+        Proteinas = Math.Round(dadosNutricionais.Proteinas100g * multiplicador, 2),
+        Carboidratos = Math.Round(dadosNutricionais.Carbos100g * multiplicador, 2),
+        Gorduras = Math.Round(dadosNutricionais.Gorduras100g * multiplicador, 2)
+    });
+});
 
 app.Run(); // FINAL DO ARQUIVO
 

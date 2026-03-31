@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks; // ADICIONADO: Necessário para o Task.Run
 using MimeKit;
 using MailKit.Security;
-// RESOLUÇÃO DO CONFLITO: Dizemos explicitamente para usar o SmtpClient do MailKit
 using SmtpClient = MailKit.Net.Smtp.SmtpClient; 
 using System.Net.Http;
 using System.Net.Http.Json; // Importante para o JsonContent
@@ -198,3 +197,5 @@ namespace ClassesBSFM
         }
     }
 }
+
+
