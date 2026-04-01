@@ -36,6 +36,7 @@ namespace ClassesBSFM
         public double IMC { get; set; }
         public double TMB { get; set; }
         public double GastoTotal { get; set; }
+        public double PesoMeta { get; set; } // O peso que o usuário quer atingir
 
         public Usuario() {
             AceitouTermos = false;

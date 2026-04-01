@@ -229,6 +229,16 @@ app.MapPost("/atualizar-medicao", async (HistoricoProgresso novaMedicao, PonteBa
     return Results.Ok(new { mensagem = "Medição registrada!", imc = novaMedicao.IMC, userAtualizado = user });
 });
 
+app.MapPost("/definir-meta", async (MetaDTO dados, PonteBanco.BSFMContext db) => {
+    var user = await db.Usuarios.FindAsync(dados.UsuarioId);
+    if (user == null) return Results.NotFound();
+    
+    user.PesoMeta = dados.PesoMeta;
+    await db.SaveChangesAsync();
+    
+    return Results.Ok(new { pesoMeta = user.PesoMeta });
+});
+
 app.Run(); // FINAL DO ARQUIVO
 
 // Modelos de dados (DTOs)
@@ -238,3 +248,4 @@ public record RedefinicaoSenha(string Email, string NovaSenha);
 public record RedefinicaoFinal(string Email, string NovaSenha);
 public record EsqueceuSenhaDTO(string Email);
 public record RedefinicaoSenhaDTO(string Email, string NovaSenha);
+public record MetaDTO(int UsuarioId, double PesoMeta);
