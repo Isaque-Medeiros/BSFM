@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSFM - Diário Nutricional IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .tab-diario { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <a href="dashboard.html" class="p-3 bg-white rounded-xl shadow-sm text-gray-500 hover:text-emerald-600 transition">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-800">Meu <span class="text-emerald-600">Diário IA</span></h1>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Resumo 48h</p>
+                <div id="countRegistros" class="text-emerald-600 font-bold">0 refeições</div>
+            </div>
+        </div>
+
+        <!-- Alerta de Limpeza -->
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex gap-3 items-center">
+            <i class="fas fa-history text-amber-500"></i>
+            <p class="text-xs text-amber-700 leading-snug">
+                Registros são mantidos por <strong>2 dias</strong> para priorizar seu foco nos objetivos recentes.
+            </p>
+        </div>
+
+        <!-- Lista de Cards -->
+        <div id="listaDiario" class="space-y-4">
+            <!-- Loader inicial -->
+            <div class="text-center py-20">
+                <i class="fas fa-circle-notch animate-spin text-3xl text-emerald-500"></i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://bsfm-nutric.up.railway.app'; 
+        const userData = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+        async function carregarDiario() {
+            if(!userData) { window.location.href = 'login.html'; return; }
+
+            try {
+                const response = await fetch(`${API_URL}/historico-analises/${userData.id}`);
+                const dados = await response.ok ? await response.json() : [];
+                
+                const container = document.getElementById('listaDiario');
+                const contador = document.getElementById('countRegistros');
+                
+                if (dados.length === 0) {
+                    container.innerHTML = `
+                        <div class="bg-white rounded-3xl p-10 text-center shadow-sm border border-dashed border-gray-200">
+                            <i class="fas fa-utensils text-gray-200 text-5xl mb-4"></i>
+                            <p class="text-gray-400 font-medium">Nenhuma análise feita nas últimas 48h.</p>
+                            <a href="analisador-ia.html" class="inline-block mt-4 text-emerald-600 font-bold hover:underline">Analisar prato agora →</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                contador.innerText = `${dados.length} registros`;
+                container.innerHTML = '';
+
+                dados.forEach(item => {
+                    const dataFormatada = new Date(item.dataAnalise).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                    const diaSemana = new Date(item.dataAnalise).toLocaleDateString('pt-BR', {weekday: 'long'});
+                    
+                    // LÓGICA DE FEEDBACK DA IA (Simplificada com base nas metas do usuário)
+                    const feedback = gerarFeedback(item, userData.gasto);
+
+                    const card = `
+                        <div class="glass-card rounded-3xl p-6 shadow-sm border border-white hover:shadow-md transition-all group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <span class="text-[10px] font-bold text-emerald-500 uppercase">${diaSemana} • ${dataFormatada}</span>
+                                    <h3 class="text-lg font-bold text-gray-800 capitalize">${item.alimento}</h3>
+                                    <p class="text-xs text-gray-400">Porção ${item.porcao}</p>
+                                </div>
+                                <div class="bg-gray-900 text-white px-3 py-1.5 rounded-xl font-bold text-sm">
+                                    ${item.calorias} <span class="text-[9px] text-gray-400">kcal</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-3 mb-5">
+                                <div class="bg-blue-50 rounded-2xl p-3">
+                                    <p class="text-[9px] font-bold text-blue-400 uppercase">Carbos</p>
+                                    <p class="font-bold text-blue-700">${item.carbos}g</p>
+                                </div>
+                                <div class="bg-rose-50 rounded-2xl p-3">
+                                    <p class="text-[9px] font-bold text-rose-400 uppercase">Proteínas</p>
+                                    <p class="font-bold text-rose-700">${item.proteinas}g</p>
+                                </div>
+                                <div class="bg-amber-50 rounded-2xl p-3">
+                                    <p class="text-[9px] font-bold text-amber-400 uppercase">Gorduras</p>
+                                    <p class="font-bold text-amber-700">${item.gorduras}g</p>
+                                </div>
+                            </div>
+
+                            <div class="${feedback.corFundo} rounded-2xl p-4 flex gap-3 items-start border ${feedback.corBorda}">
+                                <div class="text-lg mt-0.5">${feedback.emoji}</div>
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-tighter ${feedback.corTexto}">Feedback da IA</p>
+                                    <p class="text-xs ${feedback.corTexto} leading-relaxed opacity-90">${feedback.texto}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('listaDiario').innerHTML = '<p class="text-center text-red-500">Erro ao carregar diário.</p>';
+            }
+        }
+
+        function gerarFeedback(analise, gastoDiario) {
+            const limiteRefeicao = (gastoDiario * 0.35); // 35% do gasto diário numa refeição é considerado alto
+            
+            // Lógica simples baseada em macronutrientes detctados
+            if (analise.calorias > limiteRefeicao) {
+                return {
+                    texto: "Esta refeição representa uma grande parte da sua meta diária. Balanceie com um jantar leve para não exceder seu gasto total.",
+                    emoji: "⚖️",
+                    corFundo: "bg-orange-50",
+                    corTexto: "text-orange-700",
+                    corBorda: "border-orange-100"
+                };
+            }
+            
+            if (analise.proteinas > 20) {
+                return {
+                    texto: "Excelente aporte de proteínas detectado! Isso é fundamental para manter sua massa magra e dar saciedade.",
+                    emoji: "💪",
+                    corFundo: "bg-emerald-50",
+                    corTexto: "text-emerald-700",
+                    corBorda: "border-emerald-100"
+                };
+            }
+
+            if (analise.alimento.toLowerCase().includes("brocolis") || analise.alimento.toLowerCase().includes("cenoura")) {
+                 return {
+                    texto: "Vegetais detectados. Você está fornecendo micronutrientes essenciais que ajudam no seu metabolismo celular.",
+                    emoji: "🥦",
+                    corFundo: "bg-green-50",
+                    corTexto: "text-green-700",
+                    corBorda: "border-green-100"
+                };
+            }
+
+            return {
+                texto: "Análise realizada com sucesso. Mantenha-se hidratado e continue monitorando seus pratos para educar seu paladar.",
+                emoji: "🎯",
+                corFundo: "bg-blue-50",
+                corTexto: "text-blue-700",
+                corBorda: "border-blue-100"
+            };
+        }
+
+        window.onload = carregarDiario;
+    </script>
+</body>
+</html>

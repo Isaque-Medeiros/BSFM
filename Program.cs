@@ -189,6 +189,16 @@ app.MapPost("/analisar-prato", async (
     return Results.Ok(new { dados = analiseFinal });
 }).DisableAntiforgery();
 
+app.MapGet("/historico-analises/{usuarioId}", async (int usuarioId, PonteBanco.BSFMContext db) => 
+{
+    var historico = await db.AnalisesIA
+        .Where(a => a.UsuarioID == usuarioId)
+        .OrderByDescending(a => a.DataAnalise)
+        .ToListAsync();
+
+    return Results.Ok(historico);
+});
+
 app.Run(); // FINAL DO ARQUIVO
 
 // Modelos de dados (DTOs)
