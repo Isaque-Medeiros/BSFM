@@ -75,23 +75,28 @@
         function inicializar() {
             if(!userLocal) return window.location.href = 'login.html';
 
-            // 1. Mostrar dados atuais
-            document.getElementById('pesoAtualDisplay').innerText = `${userLocal.peso || 0} kg`;
+            // Garante que os valores sejam números (usando parseFloat) e trata nulos/undefined como 0
+            const pesoAtual = parseFloat(userLocal.peso) || 0;
+            const pesoMeta = parseFloat(userLocal.pesoMeta) || 0;
+
+            // Atualiza o visual
+            document.getElementById('pesoAtualDisplay').innerText = `${pesoAtual.toFixed(1)} kg`;
             
-            if(userLocal.pesoMeta > 0) {
-                const meta = userLocal.pesoMeta;
-                const atual = userLocal.peso;
-                document.getElementById('pesoMetaDisplay').innerText = `${meta} kg`;
+            if (pesoMeta > 0) {
+                document.getElementById('pesoMetaDisplay').innerText = `${pesoMeta.toFixed(1)} kg`;
                 
-                // Cálculo de progresso para a barra
-                // (O quanto falta pra chegar na meta)
-                let diff = Math.abs(atual - meta);
+                // Cálculo da diferença (Corrige o NaN)
+                let diff = Math.abs(pesoAtual - pesoMeta);
                 document.getElementById('msgProgresso').innerText = `Faltam ${diff.toFixed(1)} kg para o seu objetivo!`;
                 
-                // Barra de progresso simbólica baseada no peso atual x meta
-                let porc = (meta / atual) * 100;
-                if(porc > 100) porc = 100; // Caso queira ganhar peso
-                document.getElementById('barraProgresso').style.width = porc + "%";
+                // Barra de progresso inteligente
+                // Se objetivo é emagrecer: meta/atual. Se é ganhar: atual/meta.
+                let porc = (pesoMeta > pesoAtual) ? (pesoAtual / pesoMeta) * 100 : (pesoMeta / pesoAtual) * 100;
+                
+                document.getElementById('barraProgresso').style.width = Math.min(porc, 100) + "%";
+            } else {
+                document.getElementById('pesoMetaDisplay').innerText = "--";
+                document.getElementById('msgProgresso').innerText = "Defina sua meta abaixo para começar!";
             }
         }
 
