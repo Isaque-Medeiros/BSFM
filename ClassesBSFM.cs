@@ -210,6 +210,17 @@ namespace ClassesBSFM
     public string Porcao { get; set; } = string.Empty;
     public DateTime DataAnalise { get; set; } = DateTime.Now; // Usado para exclusão
 }
+
+public class HistoricoProgresso
+{
+    [Key]
+    public int ID { get; set; }
+    public int UsuarioID { get; set; }
+    public double Peso { get; set; }
+    public double Altura { get; set; }
+    public double IMC { get; set; }
+    public DateTime DataRegistro { get; set; } = DateTime.Now;
+}
 }
 
 

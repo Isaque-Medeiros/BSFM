@@ -199,6 +199,36 @@ app.MapGet("/historico-analises/{usuarioId}", async (int usuarioId, PonteBanco.B
     return Results.Ok(historico);
 });
 
+app.MapGet("/evolucao/{usuarioId}", async (int usuarioId, PonteBanco.BSFMContext db) => {
+    var logs = await db.Historicos
+        .Where(h => h.UsuarioID == usuarioId)
+        .OrderByDescending(h => h.DataRegistro)
+        .ToListAsync();
+    return Results.Ok(logs);
+});
+
+// ROTA: Registrar nova medição (Peso/Altura)
+app.MapPost("/atualizar-medicao", async (HistoricoProgresso novaMedicao, PonteBanco.BSFMContext db) => {
+    // 1. Calcula o IMC para o histórico
+    novaMedicao.IMC = Math.Round(novaMedicao.Peso / (novaMedicao.Altura * novaMedicao.Altura), 2);
+    novaMedicao.DataRegistro = DateTime.Now;
+
+    // 2. Salva no Histórico
+    db.Historicos.Add(novaMedicao);
+
+    // 3. Importante: Atualiza o peso/altura atual na tabela de Usuario também (para o dashboard mudar)
+    var user = await db.Usuarios.FindAsync(novaMedicao.UsuarioID);
+    if (user != null) {
+        user.Peso = novaMedicao.Peso;
+        user.Altura = novaMedicao.Altura;
+        new CalcularNutricional().RegistrarCalculos(user); // Recalcula IMC/TMB/Gasto
+        db.Usuarios.Update(user);
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok(new { mensagem = "Medição registrada!", imc = novaMedicao.IMC, userAtualizado = user });
+});
+
 app.Run(); // FINAL DO ARQUIVO
 
 // Modelos de dados (DTOs)

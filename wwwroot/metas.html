@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BSFM - Minhas Metas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 p-4 md:p-8">
+
+    <div class="max-w-2xl mx-auto">
+        <header class="flex items-center gap-4 mb-8">
+            <a href="dashboard.html" class="p-3 bg-white rounded-xl shadow-sm text-gray-500 hover:text-blue-600">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800">Metas e <span class="text-blue-600">Evolução</span></h1>
+        </header>
+
+        <!-- Card de Meta Atual -->
+        <div class="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 text-white shadow-xl mb-8">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <p class="text-blue-100 text-xs font-bold uppercase tracking-wider">Peso Atual</p>
+                    <h2 id="pesoAtualCard" class="text-4xl font-black">-- kg</h2>
+                </div>
+                <i class="fas fa-bullseye text-blue-300/40 text-4xl"></i>
+            </div>
+            
+            <div id="statusIMC" class="bg-white/10 rounded-2xl p-4 border border-white/20">
+                <p class="text-sm font-medium">Seu IMC atual: <strong id="imcValor">--</strong></p>
+                <div class="w-full bg-white/20 h-2 rounded-full mt-2">
+                    <div id="barraProgresso" class="bg-white h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário para Nova Medição -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 mb-8">
+            <h3 class="font-bold text-gray-800 mb-4 italic">Registrar pesagem de hoje</h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Novo Peso (kg)</label>
+                    <input type="number" id="inputPeso" step="0.1" class="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-2">Sua Altura (m)</label>
+                    <input type="number" id="inputAltura" step="0.01" class="w-full bg-gray-50 border-0 rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <button onclick="salvarProgresso()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-blue-700 active:scale-95 transition">
+                Registrar Evolução <i class="fas fa-plus-circle ml-2"></i>
+            </button>
+        </div>
+
+        <!-- Lista de Histórico -->
+        <h3 class="font-bold text-gray-800 mb-4 px-2">Histórico de Medições</h3>
+        <div id="timeline" class="space-y-3">
+            <!-- Os itens do histórico aparecerão aqui -->
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://bsfm-nutric.up.railway.app'; 
+        const userData = JSON.parse(localStorage.getItem('usuarioLogado'));
+
+        async function carregarMetas() {
+            if(!userData) return;
+            
+            // 1. Atualiza topo do card com dados do localStorage inicial
+            document.getElementById('pesoAtualCard').innerText = userData.peso + " kg";
+            document.getElementById('imcValor').innerText = userData.imc;
+            document.getElementById('inputAltura').value = userData.altura || 0; // Preenche automático pra facilitar
+            
+            // Animação da barra de progresso (exemplo baseado no IMC saudável 24)
+            const porc = Math.min((userData.imc / 40) * 100, 100);
+            document.getElementById('barraProgresso').style.width = porc + "%";
+
+            // 2. Busca histórico da API
+            try {
+                const res = await fetch(`${API_URL}/evolucao/${userData.id}`);
+                const logs = await res.json();
+                
+                const container = document.getElementById('timeline');
+                container.innerHTML = '';
+
+                logs.forEach((log, index) => {
+                    const data = new Date(log.dataRegistro).toLocaleDateString('pt-BR');
+                    const diffIcon = index < logs.length - 1 ? 
+                        (log.peso < logs[index+1].peso ? 'fa-arrow-down text-emerald-500' : 'fa-arrow-up text-rose-500') : 'fa-minus text-gray-300';
+
+                    container.innerHTML += `
+                        <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
+                                    <i class="fas ${diffIcon}"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800">${log.peso} kg</p>
+                                    <p class="text-[10px] text-gray-400 font-bold uppercase">${data}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-blue-600">IMC ${log.imc}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch(e) {}
+        }
+
+        async function salvarProgresso() {
+            const novoPeso = document.getElementById('inputPeso').value;
+            const novaAlt = document.getElementById('inputAltura').value;
+
+            if(!novoPeso || !novaAlt) return alert("Preencha peso e altura.");
+
+            const res = await fetch(`${API_URL}/atualizar-medicao`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    UsuarioID: userData.id, 
+                    Peso: parseFloat(novoPeso), 
+                    Altura: parseFloat(novaAlt) 
+                })
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                // ATUALIZA LOCALSTORAGE PARA O DASHBOARD RECEBER OS NOVOS VALORES
+                const userAtu = data.userAtualizado;
+                const infoNova = { 
+                    id: userAtu.id, 
+                    nome: userAtu.nome, 
+                    imc: userAtu.imc, 
+                    tmb: userAtu.tmb, 
+                    gasto: userAtu.gastoTotal,
+                    peso: userAtu.peso,
+                    altura: userAtu.altura
+                };
+                localStorage.setItem('usuarioLogado', JSON.stringify(infoNova));
+                
+                alert("Evolução salva! Parabéns por manter o foco.");
+                location.reload();
+            }
+        }
+
+        window.onload = carregarMetas;
+    </script>
+</body>
+</html>

@@ -13,6 +13,7 @@ namespace PonteBanco
         public DbSet<CronogramaAlimentar> Cronogramas { get; set; }
         public DbSet<Hospital> Hospitais { get; set; }
         public DbSet<AnaliseIA> AnalisesIA { get; set; } // ADICIONADO: Nova tabela
+        public DbSet<HistoricoProgresso> Historicos { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
