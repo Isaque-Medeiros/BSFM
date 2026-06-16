@@ -26,22 +26,24 @@ st.set_page_config(
 # ------------------------------------------------------------------------------
 # Inicializacao do cliente Groq
 # ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Inicializacao do cliente Groq
+# ------------------------------------------------------------------------------
 @st.cache_resource
 def get_groq_client():
-    # Busca a chave carregada pelo load_dotenv()
-    api_key = os.environ.get("GROQ_API_KEY") 
+    # O Render vai injetar a variavel do painel diretamente aqui
+    api_key = os.environ.get("GROQ_API_KEY")
     
     if not api_key:
         st.error(
             "Variável de ambiente GROQ_API_KEY não encontrada. "
-            "Certifique-se de configurá-la no arquivo .env ou no painel do Render."
+            "Certifique-se de configurá-la no painel do Render."
         )
         st.stop()
     return Groq(api_key=api_key)
 
 
 client = get_groq_client()
-
 # ------------------------------------------------------------------------------
 # Estado da sessaoo
 # ------------------------------------------------------------------------------
