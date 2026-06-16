@@ -10,6 +10,10 @@ from io import BytesIO
 import streamlit as st
 from groq import Groq
 from PIL import Image
+from dotenv import load_dotenv  # Importe a biblioteca
+
+# Carrega as variaveis do arquivo .env se ele existir
+load_dotenv()
 
 # ------------------------------------------------------------------------------
 # Configuracao da pagina
@@ -19,17 +23,18 @@ st.set_page_config(
     page_icon="🤖",
     layout="wide",
 )
-
 # ------------------------------------------------------------------------------
 # Inicializacao do cliente Groq
 # ------------------------------------------------------------------------------
 @st.cache_resource
 def get_groq_client():
-    api_key = os.environ.get("GROQ_API_KEY")
+    # Busca a chave carregada pelo load_dotenv()
+    api_key = os.environ.get("GROQ_API_KEY") 
+    
     if not api_key:
         st.error(
-            "Variavel de ambiente GROQ_API_KEY nao encontrada. "
-            "Certifique-se de configura-la antes de executar a aplicacao."
+            "Variável de ambiente GROQ_API_KEY não encontrada. "
+            "Certifique-se de configurá-la no arquivo .env ou no painel do Render."
         )
         st.stop()
     return Groq(api_key=api_key)
