@@ -111,7 +111,8 @@ def ask_groq_vision(user_question: str, image_base64: str) -> str:
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",
+            # MODELO ATUALIZADO AQUI:
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=messages,
             temperature=0.7,
             max_tokens=1024,
@@ -134,7 +135,6 @@ def ask_groq_vision(user_question: str, image_base64: str) -> str:
             )
         else:
             return f"⚠️ **Erro ao processar a requisicao:** {e}"
-
 
 # ------------------------------------------------------------------------------
 # Sidebar - Upload de imagem
